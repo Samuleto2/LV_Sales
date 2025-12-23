@@ -88,6 +88,17 @@ let editingSaleId = null; // null si es nueva venta
 
         document.querySelector("#saleForm button[type=submit]").textContent = "Crear venta";
 
+        // Función para formatear montos al estilo argentino
+        function formatMoney(amount) {
+            return amount.toLocaleString('es-AR', {
+                style: 'currency',
+                currency: 'ARS',
+                minimumFractionDigits: 0
+            });
+        }
+
+
+
         loadSales(); // recargar tabla
 
         // Limpiar input y reset
@@ -98,6 +109,16 @@ let editingSaleId = null; // null si es nueva venta
 
         loadSales(); // recargar tabla de ventas
     });
+
+    function formatMoney(amount) {
+        amount = Number(amount) || 0;  // convierte a número, 0 si es inválido
+        return amount.toLocaleString('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 0
+        });
+    }
+
 
 // Cargar listado de ventas con botón editar
 async function loadSales() {
@@ -111,7 +132,7 @@ async function loadSales() {
         row.innerHTML = `
             <td>${s.sale_date}</td>
             <td>${s.customer_name}</td>
-            <td>$${s.amount}</td>
+            <td>${formatMoney(s.amount)}</td>
             <td>${s.payment_method}</td>
             <td>${s.paid ? "Si" : "No"}</td>
             <td>
@@ -240,5 +261,10 @@ async function downloadPDF(saleId) {
         alert('Error al descargar el comprobante');
     }
 
+
+
+
+
+    
 }
 

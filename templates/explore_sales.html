@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Explorar Ventas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='/css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Explorar Ventas</h1>
+
+        <!-- Filtros -->
+        <form class="filters" method="get">
+            <div class="autocomplete-wrapper" style="position: relative; display: inline-block;">
+                <input type="text" name="customer" id="customer-input" placeholder="Cliente" autocomplete="off" value="{{ request.args.get('customer','') }}">
+                <div id="customer-suggestions" class="suggestions"></div>
+            </div>
+            <input type="text" name="payment_method" placeholder="Método de pago" value="{{ request.args.get('payment_method','') }}">
+            <select name="paid">
+                <option value="">Pago / No pago</option>
+                <option value="si" {% if request.args.get('paid') == 'si' %}selected{% endif %}>Si</option>
+                <option value="no" {% if request.args.get('paid') == 'no' %}selected{% endif %}>No</option>
+            </select>
+            <div class="date-filters">
+                <label for="date_from">Desde:</label>
+                <input type="date" name="date_from" id="date_from" value="{{ request.args.get('date_from','') }}">
+
+                <label for="date_to">Hasta:</label>
+                <input type="date" name="date_to" id="date_to" value="{{ request.args.get('date_to','') }}">
+            </div>
+            <button type="submit">Filtrar</button>  
+        </form>
+
+        <!-- Tabla de ventas -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Monto</th>
+                    <th>Método de pago</th>
+                    <th>Pagado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sales %}
+                <tr>
+                    <td>{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ s.customer.first_name }} {{ s.customer.last_name }}</td>
+                    <td class="amount" data-amount="{{ s.amount }}"></td>
+                    <td>{{ s.payment_method }}</td>
+                    <td>{{ "Si" if s.paid else "No" }}</td>
+                    <td>
+                        <a href="{{ url_for('generate_label', sale_id=s.id) }}" target="_blank" class="btn">Imprimir comprobante</a>
+                        {% if not s.paid %}
+                        <button class="btn-pay" data-sale="{{ s.id }}">Marcar como pagado</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+
+
+
+<script>
+const input = document.getElementById('customer-input');
+const suggestions = document.getElementById('customer-suggestions');
+
+let timeout = null;
+
+input.addEventListener('input', () => {
+    clearTimeout(timeout);
+    const query = input.value.trim();
+    if (!query) {
+        suggestions.innerHTML = '';
+        return;
+    }
+
+    timeout = setTimeout(() => {
+        fetch(`/customers/search?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                suggestions.innerHTML = '';
+                // Limitar a 5 resultados
+                data.slice(0,5).forEach(c => {
+                    const div = document.createElement('div');
+                    div.classList.add('suggestion-item');
+                    div.textContent = `${c.first_name} ${c.last_name} (${c.city})`;
+                    div.addEventListener('click', () => {
+                        input.value = `${c.first_name} ${c.last_name}`;
+                        suggestions.innerHTML = '';
+                    });
+                    suggestions.appendChild(div);
+                });
+            });
+    }, 300); // espera 300ms para no saturar requests
+});
+
+
+document.querySelectorAll('.btn-pay').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const saleId = btn.getAttribute('data-sale');
+        fetch(`/sales/${saleId}/mark_paid`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message);
+                // Actualizar la tabla visualmente
+                const td = btn.parentElement;
+                td.previousElementSibling.textContent = "Si"; // cambia Pagado
+                btn.remove(); // quita el botón
+            }
+        })
+        .catch(err => console.error(err));
+    });
+});
+
+
+document.querySelectorAll('.amount').forEach(td => {
+    const amount = parseFloat(td.getAttribute('data-amount'));
+    td.textContent = amount.toLocaleString('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        minimumFractionDigits: 0
+    });
+});
+</script>
+
+
+</html>

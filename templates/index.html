@@ -80,7 +80,12 @@
     <hr>
 
     <!-- Lista de ventas -->
-    <h2>Listado de ventas</h2>
+    <h2 style="display:flex; align-items:center; justify-content: space-between;">Ultimas Ventas
+
+        <a href="{{ url_for('explore_sales') }}">
+        <button>Ver más</button>
+    </a>
+    </h2>
     <table border="1" id="salesTable">
         <thead>
             <tr>

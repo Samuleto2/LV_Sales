@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from flask import Flask, jsonify, request, send_file, render_template
 from flask_sqlalchemy import SQLAlchemy
@@ -6,6 +7,7 @@ from models import db, Customer, Sale
 from io import BytesIO
 from reportlab.lib.pagesizes import mm
 from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
 
 
 app = Flask(__name__)
@@ -22,6 +24,18 @@ with app.app_context():
 def index():
     return render_template("index.html")
 
+
+
+
+
+##Convertidor de dinero
+
+@app.template_filter('money')
+def money_filter(amount):
+    """Formatea un número como dinero con separador de miles y símbolo $"""
+    if amount is None:
+        return "$0"
+    return f"${amount:,.0f}".replace(",", ".")
 
 
                      ##Endpoints Customers##
@@ -266,39 +280,93 @@ def generate_label(sale_id):
     c = canvas.Canvas(buffer, pagesize=(width, height))
 
     # Logo (ajustar ruta y tamaño)
-    try:
-        logo = ImageReader("static/logo.png")
-        c.drawImage(logo, 5*mm, height-25*mm, width=30*mm, preserveAspectRatio=True, mask='auto')
-    except:
-        pass  # si no hay logo, seguimos igual
+    logo_path = os.path.join(app.root_path, 'static', 'images', 'logo.png')
 
-    # Datos de la empresa
-    c.setFont("Helvetica-Bold", 8)
-    c.drawString(40*mm, height-15*mm, "Lunita Val")
-    c.setFont("Helvetica", 7)
-    c.drawString(40*mm, height-20*mm, "Del Viso")
-    c.drawString(40*mm, height-25*mm, "0113xxxxxxx")
-    c.drawString(40*mm, height-30*mm, "lunitavalropa@gmail.com")
+    try:
+        if os.path.exists(logo_path):
+            logo = ImageReader(logo_path)
+            # Colocado desde arriba izquierda
+            c.drawImage(logo, (width - 50*mm)/2, height-50*mm, width=50*mm, height=50*mm, preserveAspectRatio=True, mask='auto')
+        else:
+            print("Logo no encontrado en:", logo_path)
+    except Exception as e:
+        print("Error cargando logo:", e)
+
+
+
+
+    # Iconos y datos en una línea horizontal debajo del logo
+    icon_size = 4*mm
+    line_y = height - 10*mm  # posición vertical debajo del logo
+
+    # Teléfono
+    phone_icon_path = os.path.join(app.root_path, 'static', 'images', 'phone.png')
+    if os.path.exists(phone_icon_path):
+        c.drawImage(ImageReader(phone_icon_path), width/2 - 45*mm, line_y, width=icon_size, height=icon_size, mask='auto')
+    c.drawString(width/2 - 40*mm, line_y, "011-32651073")
+
+    # Mail
+    email_icon_path = os.path.join(app.root_path, 'static', 'images',  'mail.png')
+    if os.path.exists(email_icon_path):
+        c.drawImage(ImageReader(email_icon_path), width/2 + -5*mm, line_y, width=icon_size, height=icon_size, mask='auto')
+    c.drawString(width/2 + 0*mm, line_y, "lunitavalropa@gmail.com")
 
     # Línea divisoria
-    c.line(5*mm, height-35*mm, width-5*mm, height-35*mm)
+    c.line(5*mm, height-40*mm, width-5*mm, height-40*mm)
 
-    # Datos del cliente y venta
-    c.setFont("Helvetica", 8)
-    y = height - 40*mm
-    c.drawString(5*mm, y, f"Nombre: {customer.first_name} {customer.last_name}"); y -= 6*mm
-    c.drawString(5*mm, y, f"Localidad: {customer.city}"); y -= 6*mm
-    c.drawString(5*mm, y, f"Dirección: {customer.address}"); y -= 6*mm
+    # Datos del cliente (izquierda, título en negrita)
+    y = height - 45*mm
+
+    # Cliente en la misma línea
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(5*mm, y, "Cliente:")
+    c.setFont("Helvetica", 9)
+    c.drawString(5*mm + 25*mm, y, f"{customer.first_name} {customer.last_name}")  # desplazamos a la derecha del título
+    y -= 6*mm  # bajar para la siguiente línea
+
+    # Localidad
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(5*mm, y, "Localidad:")
+    c.setFont("Helvetica", 9)
+    c.drawString(5*mm + 25*mm, y, f"{customer.city}")
+    y -= 6*mm
+
+    # Dirección
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(5*mm, y, "Dirección:")
+    c.setFont("Helvetica", 9)
+    c.drawString(5*mm + 25*mm, y, f"{customer.address}")
+    y -= 6*mm
+
+    # Teléfono del cliente
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(5*mm, y, "Teléfono:")
+    c.setFont("Helvetica", 9)
+    c.drawString(5*mm + 25*mm, y, f"{customer.phone}")
+    y -= 6*mm
+
+    # Descripción (si existe)
     if getattr(customer, 'description', None):
-        c.drawString(5*mm, y, f"Descripción: {customer.description}"); y -= 6*mm
-    c.drawString(5*mm, y, f"Fecha: {sale.created_at.strftime('%d/%m/%Y %H:%M')}"); y -= 8*mm
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(5*mm, y, "Descripción:")
+        c.setFont("Helvetica", 9)
+        c.drawString(5*mm + 25*mm, y, f"{customer.description}")
+        y -= 6*mm
+
+    # Fecha
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(5*mm, y, "Fecha:")
+    c.setFont("Helvetica", 9)
+    c.drawString(5*mm + 25*mm, y, f"{sale.created_at.strftime('%d/%m/%Y %H:%M')}")
+    y -= 8*mm
+
 
     # Línea divisoria antes del total
     c.line(5*mm, y, width-5*mm, y); y -= 5*mm
 
-    # Total
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(5*mm, y, f"Total: ${sale.amount}")
+    # Total (centrado, grande y en negrita)
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(width/2, y, f"Total: ${sale.amount}")
 
     c.showPage()
     c.save()
@@ -310,6 +378,54 @@ def generate_label(sale_id):
         download_name=f"venta_{sale.id}.pdf",
         mimetype="application/pdf"
     )
+
+
+
+
+@app.route("/sales/explore", methods=["GET"])
+def explore_sales():
+    customer = request.args.get("customer", "")
+    payment_method = request.args.get("payment_method", "")
+    paid = request.args.get("paid", "")
+    date_from = request.args.get("date_from", "")
+    date_to = request.args.get("date_to", "")
+
+    query = Sale.query.join(Customer)
+
+    if customer:
+        query = query.filter((Customer.first_name + " " + Customer.last_name).ilike(f"%{customer}%"))
+    if payment_method:
+        query = query.filter(Sale.payment_method.ilike(f"%{payment_method}%"))
+    if paid.lower() in ["si","yes","true","1"]:
+        query = query.filter(Sale.paid==True)
+    elif paid.lower() in ["no","false","0"]:
+        query = query.filter(Sale.paid==False)
+    if date_from:
+        query = query.filter(Sale.created_at>=date_from)
+    if date_to:
+        query = query.filter(Sale.created_at<=date_to)
+
+    sales = query.all()
+    return render_template("explore_sales.html", sales=sales)
+
+
+##CAMBIAR A PAGO TRUE##
+
+@app.route("/sales/<int:sale_id>/mark_paid", methods=["POST"])
+def mark_sale_paid(sale_id):
+    sale = Sale.query.get(sale_id)
+    if not sale:
+        return jsonify({"error": "Venta no encontrada"}), 404
+
+    if sale.paid:
+        return jsonify({"message": "La venta ya estaba marcada como pagada"}), 400
+
+    sale.paid = True
+    db.session.commit()
+    return jsonify({"message": "Venta marcada como pagada correctamente"})
+
+
+
 
 
 if __name__ == "__main__":
