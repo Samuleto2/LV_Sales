@@ -1,8 +1,11 @@
 from datetime import datetime
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from models import db, Customer, Sale
+from io import BytesIO
+from reportlab.lib.pagesizes import mm
+from reportlab.pdfgen import canvas
 
 
 app = Flask(__name__)
@@ -14,6 +17,11 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
 
 
                      ##Endpoints Customers##
@@ -103,6 +111,8 @@ def delete_customer(customer_id):
 
     if not customer:
         return jsonify({"Error":"El cliente no existe"}), 404
+    if customer.sales:
+        return jsonify({"error": "No se puede eliminar cliente con ventas asociadas"}), 400
     
     db.session.delete(customer)
     db.session.commit()
@@ -195,6 +205,7 @@ def update_sale(sale_id):
         return jsonify({"message": "Cliente inválido"}), 400
     if amount is None or payment_method is None or paid is None:
         return jsonify({"message": "Campos incompletos"}), 400
+    
 
     sale.customer_id = customer_id
     sale.amount = amount
@@ -240,7 +251,65 @@ def search_customers():
      }for c in results])
 
 
+## ENDPOINT CREACION DE ETIQUETAS ##
 
+@app.route("/sales/<int:sale_id>/label", methods=["GET"])
+def generate_label(sale_id):
+    sale = Sale.query.get(sale_id)
+    if not sale:
+        return jsonify({"error": "Venta no encontrada"}), 404
+
+    customer = Customer.query.get(sale.customer_id)
+
+    buffer = BytesIO()
+    width, height = 100*mm, 150*mm
+    c = canvas.Canvas(buffer, pagesize=(width, height))
+
+    # Logo (ajustar ruta y tamaño)
+    try:
+        logo = ImageReader("static/logo.png")
+        c.drawImage(logo, 5*mm, height-25*mm, width=30*mm, preserveAspectRatio=True, mask='auto')
+    except:
+        pass  # si no hay logo, seguimos igual
+
+    # Datos de la empresa
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(40*mm, height-15*mm, "Lunita Val")
+    c.setFont("Helvetica", 7)
+    c.drawString(40*mm, height-20*mm, "Del Viso")
+    c.drawString(40*mm, height-25*mm, "0113xxxxxxx")
+    c.drawString(40*mm, height-30*mm, "lunitavalropa@gmail.com")
+
+    # Línea divisoria
+    c.line(5*mm, height-35*mm, width-5*mm, height-35*mm)
+
+    # Datos del cliente y venta
+    c.setFont("Helvetica", 8)
+    y = height - 40*mm
+    c.drawString(5*mm, y, f"Nombre: {customer.first_name} {customer.last_name}"); y -= 6*mm
+    c.drawString(5*mm, y, f"Localidad: {customer.city}"); y -= 6*mm
+    c.drawString(5*mm, y, f"Dirección: {customer.address}"); y -= 6*mm
+    if getattr(customer, 'description', None):
+        c.drawString(5*mm, y, f"Descripción: {customer.description}"); y -= 6*mm
+    c.drawString(5*mm, y, f"Fecha: {sale.created_at.strftime('%d/%m/%Y %H:%M')}"); y -= 8*mm
+
+    # Línea divisoria antes del total
+    c.line(5*mm, y, width-5*mm, y); y -= 5*mm
+
+    # Total
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(5*mm, y, f"Total: ${sale.amount}")
+
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"venta_{sale.id}.pdf",
+        mimetype="application/pdf"
+    )
 
 
 if __name__ == "__main__":

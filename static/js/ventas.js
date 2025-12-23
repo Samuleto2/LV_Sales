@@ -1,103 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="style.css">
-    <title>Ventas WebApp</title>
-</head>
-<body>
-    <h1>Lunita Val | Ventas</h1>
-
-
-
-    <!-- Formulario para crear venta -->
-     <div id="headerForm" style="display:flex; justify-content: space-between; align-items: center; max-width: 700px; margin: 0 auto 10px auto;">
-    <h2>Crear venta</h2>
-        <!-- Botón nuevo cliente -->
-    <button type="button" id="btnNewCustomer">Nuevo cliente</button>
-     </div>
-    <div id="formContainer" style="display:flex; gap:20px; max-width: none;">
-    <form id="saleForm" style="flex:1;">
-        <label>
-            Cliente:
-            <input type="text" id="customer_name" placeholder="Escriba nombre o apellido" autocomplete="off">
-            <div id="suggestions" style="border:1px solid #ccc; max-height:150px; overflow-y:auto; background:#fff;"></div>
-        </label>
-        <input type="hidden" id="customer_id">
-
-        <!-- Información del cliente seleccionado -->
-        <div id="customer_info" style="border:1px solid #ccc; padding:10px; margin-top:10px; display:none;">
-            <h3>Datos del cliente</h3>
-            <p><strong>Nombre:</strong> <span id="info_name"></span></p>
-            <p><strong>Dirección:</strong> <span id="info_address"></span></p>
-            <p><strong>Localidad:</strong> <span id="info_city"></span></p>
-        </div>
-
-        <label>
-            Monto:
-            <input type="number" step="0.01" id="amount" required>
-        </label><br>
-
-        <label>
-            Método de pago:
-            <select id="payment_method">
-                <option value="transfer">Transferencia</option>
-                <option value="card">Tarjeta/QR</option>
-                <option value="cash">Efectivo</option>
-            </select>
-        </label><br>
-
-        <label>
-            Pagado:
-            <select id="paid">
-                <option value="true">Sí</option>
-                <option value="false">No</option>
-            </select>
-        </label><br>
-
-        <button type="submit">Crear venta</button>
-    </form>
-        <div id="customerFormDiv" style="display:none; flex:1; min-width:0; border:1px solid #ccc; padding:10px;">
-        <h3 id="customerFormTitle">Crear Cliente</h3>
-        <form id="customerForm">
-            <input type="hidden" id="customerFormId">
-            
-            <label>Nombre: <input type="text" id="cf_first_name" required></label><br>
-            <label>Apellido: <input type="text" id="cf_last_name" required></label><br>
-            <label>Dirección: <input type="text" id="cf_address" required></label><br>
-            <label>Localidad: <input type="text" id="cf_city" required></label><br>
-            <label>Teléfono: <input type="text" id="cf_phone" required></label><br>
-            <label>Descripción: <textarea id="cf_description"></textarea></label><br>
-
-            <button type="submit">Guardar</button>
-            <button type="button" id="customerFormCancel">Cancelar</button>
-        </form>
-    </div>
-</div>
-    <!-- Formulario para crear clientes -->
-
-
-    <hr>
-
-    <!-- Lista de ventas -->
-    <h2>Listado de ventas</h2>
-    <table border="1" id="salesTable">
-        <thead>
-            <tr>
-                <th>Fecha</th>
-                <th>Cliente</th>
-                <th>Monto</th>
-                <th>Método</th>
-                <th>Pago</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-</body>
-</html>
-
-<script>
 document.addEventListener("DOMContentLoaded", () => {
 
     const apiUrl = "http://127.0.0.1:5000/sales";
@@ -217,6 +117,8 @@ async function loadSales() {
             <td>
                 <button onclick="editSale(${s.id})">Editar</button>
                 <button onclick="deleteSale(${s.id})">Borrar</button>
+                <button onclick="window.open('http://localhost:5000/sales/${s.id}/label', '_blank')">Descargar comprobante</button>
+                
             </td>
         `;
         tbody.appendChild(row);
@@ -310,7 +212,33 @@ customerForm.addEventListener("submit", async (e) => {
 
 });
 
-</script>
 
-</body>
-</html>
+
+async function downloadPDF(saleId) {
+    try {
+        const response = await fetch(`/sales/${saleId}/label`, {
+            method: 'GET'
+        });
+
+        if (!response.ok) {
+            throw new Error('No se pudo generar el comprobante');
+        }
+
+        const blob = await response.blob();
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `venta_${saleId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error(error);
+        alert('Error al descargar el comprobante');
+    }
+
+}
+
