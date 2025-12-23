@@ -80,12 +80,14 @@
     <hr>
 
     <!-- Lista de ventas -->
-    <h2 style="display:flex; align-items:center; justify-content: space-between;">Ultimas Ventas
+     <div id="headerForm" style="display:flex; justify-content: space-between; align-items: center; max-width: 700px; margin: 0 auto 10px auto;">
+    <h2 style="display:flex; align-items:center; justify-content: space-between;">Ultimas Ventas</h2>
 
         <a href="{{ url_for('explore_sales') }}">
-        <button>Ver más</button>
+        <button id="btnNewCustomer">Ver más</button>
     </a>
-    </h2>
+    
+    </div>
     <table border="1" id="salesTable">
         <thead>
             <tr>
