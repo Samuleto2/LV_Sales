@@ -28,13 +28,16 @@ def get_customer(id):
         return jsonify({"error": "Cliente no encontrado"}), 404
     return jsonify(customer_to_dict(customer)), 200
 
-# POST /customers
 @customers_bp.post("")
 def create_new_customer():
     data = request.get_json()
     if not data:
         return jsonify({"error": "No se recibió data"}), 400
-    customer = create_customer(data)
+    try:
+        customer = create_customer(data)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
     return jsonify({
         "message": "Cliente creado correctamente",
         "customer": customer_to_dict(customer)
