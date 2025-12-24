@@ -29,8 +29,13 @@
                 <input type="date" name="date_to" id="date_to" value="{{ request.args.get('date_to','') }}">
             </div>
             <button type="submit">Filtrar</button>  
-        </form>
 
+        </form>
+            <h2 style="display:flex; align-items:center; justify-content: space-between;">Ultimas Ventas
+                        <a href="{{ url_for('index') }}">
+        <button id="btnNewCustomer">Ir a crear venta</button>
+    </a>
+    </h2>
         <!-- Tabla de ventas -->
         <table>
             <thead>

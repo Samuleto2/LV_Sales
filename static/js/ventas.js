@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     const apiUrl = "http://127.0.0.1:5000/sales";
-    const customerSearchUrl = "http://127.0.0.1:5000/customers/search";
+    const customerSearchUrl = "/customers/search";
 
     const customerInput = document.querySelector("#customer_name");
     const suggestionsDiv = document.querySelector("#suggestions");
@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const res = await fetch(`${customerSearchUrl}?q=${query}`);
+        const res = await fetch(`${customerSearchUrl}?q=${encodeURIComponent(query)}`);
         const customers = await res.json();
 
         suggestionsDiv.innerHTML = "";
@@ -131,15 +131,14 @@ async function loadSales() {
         const row = document.createElement("tr");
         row.innerHTML = `
             <td>${s.sale_date}</td>
-            <td>${s.customer_name}</td>
+            <td>${s.customer_first_name} ${s.customer_last_name}</td>
             <td>${formatMoney(s.amount)}</td>
             <td>${s.payment_method}</td>
             <td>${s.paid ? "Si" : "No"}</td>
             <td>
                 <button onclick="editSale(${s.id})">Editar</button>
                 <button onclick="deleteSale(${s.id})">Borrar</button>
-                <button onclick="window.open('http://localhost:5000/sales/${s.id}/label', '_blank')">Descargar comprobante</button>
-                
+                <button onclick="downloadPDF(${s.id})">Descargar comprobante</button>
             </td>
         `;
         tbody.appendChild(row);
@@ -237,9 +236,7 @@ customerForm.addEventListener("submit", async (e) => {
 
 async function downloadPDF(saleId) {
     try {
-        const response = await fetch(`/sales/${saleId}/label`, {
-            method: 'GET'
-        });
+    const response = await fetch(`/pdf/sale/${saleId}/label`, { method: 'GET' });
 
         if (!response.ok) {
             throw new Error('No se pudo generar el comprobante');
