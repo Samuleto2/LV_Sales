@@ -60,7 +60,8 @@ let editingSaleId = null; // null si es nueva venta
             customer_id: selectedCustomer.id,
             amount: parseFloat(document.querySelector("#amount").value),
             payment_method: document.querySelector("#payment_method").value,
-            paid: document.querySelector("#paid").value === "true"
+            paid: document.querySelector("#paid").value === "true",
+            notes: document.querySelector("#notes").value  // <- esto es clave
         };
 
         let method = "POST";
