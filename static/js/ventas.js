@@ -137,9 +137,9 @@ async function loadSales() {
             <td>${s.payment_method}</td>
             <td>${s.paid ? "Si" : "No"}</td>
             <td>
-                <button onclick="editSale(${s.id})">Editar</button>
-                <button onclick="deleteSale(${s.id})">Borrar</button>
-                <button onclick="downloadPDF(${s.id})">Descargar comprobante</button>
+                <button class="button button-edit" onclick="editSale(${s.id})">Editar</button>
+                <button class="button button-delete" onclick="deleteSale(${s.id})">Borrar</button>
+                <button class="button button-download" onclick="downloadPDF(${s.id})">Descargar comprobante</button>
             </td>
         `;
         tbody.appendChild(row);
@@ -170,7 +170,12 @@ window.editSale = async function(id) {
 
     // Cambiar texto del botón
     document.querySelector("#saleForm button[type=submit]").textContent = "Guardar cambios";
+    
+    
 }
+
+
+
 
     // Borrar venta
     window.deleteSale = async function(id) {

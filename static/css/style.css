@@ -28,6 +28,82 @@
         margin: 0 auto 30px auto; /* centrar todo el contenedor */
     }
 
+    /*HEADER*/
+    .site-header {
+    display: flex;
+    align-items: center;
+    background-color: #2e457d;
+    color: white;
+    padding: 10px 20px;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: white;
+}
+
+.logo {
+    height: 40px;
+    margin-right: 10px;
+}
+
+.site-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+
+/* Botones generales */
+.button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Editar: azul suave */
+.button-edit {
+    background-color: #4A90E2; /* azul corporativo */
+}
+
+.button-edit:hover {
+    background-color: #357ABD;
+}
+
+/* Borrar: gris oscuro con hover llamativo */
+.button-delete {
+    background-color: #B91C1C; /* gris sobrio */
+}
+
+.button-delete:hover {
+    background-color: #7F1D1D; /* gris más oscuro */
+}
+
+/* Descargar comprobante: naranja suave */
+.button-download {
+    background-color: #F59E0B; /* naranja cálido */
+}
+
+.button-download:hover {
+    background-color: #D97706;
+}
+
+/* Sombra y borde sutil para modo edición */
+.editing-mode {
+    box-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+    border: 1px solid #4A90E2;
+    transition: box-shadow 0.3s, border 0.3s;
+}
+
+
+
+
+
 #saleForm, #customerFormDiv {
     flex: 1; /* ocupan espacio disponible de manera proporcional */
     display: flex;
@@ -82,7 +158,7 @@
             }
 
 
-        #btnNewCustomer {
+        #btnNewCustomer, .botonStandart {
         padding: 12px 20px;
         font-size: 1.1rem;
         background-color: #222;
@@ -92,7 +168,9 @@
         transition: background-color 0.1s ease; /* efecto hover rápido */
         }
 
-        #btnNewCustomer:hover {
+        
+
+        #btnNewCustome:hover {
             background-color: #555;
         }
 

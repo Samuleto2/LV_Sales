@@ -6,7 +6,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <h1>Lunita Val | Ventas</h1>
+    <header class="site-header">
+    <a href="{{ url_for('index') }}" class="logo-link">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Lunita Val" class="logo">
+        <span class="site-title">Lunita Val | Ventas</span>
+    </a>
+    </header>
 
 
 
@@ -60,7 +65,7 @@
             
         
 
-        <button type="submit">Crear venta</button>
+        <button type="submit" id="btnNewCustomer">Crear venta</button>
     </form>
         <div id="customerFormDiv" style="display:none; flex:1; min-width:0; border:1px solid #ccc; padding:10px;">
         <h3 id="customerFormTitle">Crear Cliente</h3>
@@ -74,8 +79,8 @@
             <label>Teléfono: <input type="text" id="cf_phone" required></label><br>
             <label>Descripción: <textarea id="cf_description"></textarea></label><br>
 
-            <button type="submit">Guardar</button>
-            <button type="button" id="customerFormCancel">Cancelar</button>
+            <button type="submit" class="button button-edit">Guardar</button>
+            <button type="button" class="button button-delete" id="customerFormCancel">Cancelar</button>
         </form>
     </div>
 </div>
