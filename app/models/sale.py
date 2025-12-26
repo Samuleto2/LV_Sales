@@ -13,5 +13,11 @@ class Sale(db.Model):
     notes = db.Column(db.Text)
     sale_date = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ##Update logistics
+    has_shipping = db.Column(db.Boolean, default=False)
+    shipping_date = db.Column(db.Date, nullable=True)
+    sales_channel = db.Column(db.String(20), nullable=False)
+    is_cash = db.Column(db.Boolean, default=False, nullable=False)
+    has_change = db.Column(db.Boolean, default=False, nullable=False)
 
     customer = db.relationship("Customer", back_populates="sales")

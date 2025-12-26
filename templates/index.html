@@ -19,10 +19,31 @@
      <div id="headerForm" style="display:flex; justify-content: space-between; align-items: center; max-width: 700px; margin: 0 auto 10px auto;">
     <h2>Crear venta</h2>
         <!-- Botón nuevo cliente -->
-    <button type="button" id="btnNewCustomer">Nuevo cliente</button>
+    <button type="button" id="btnNewCustomer" >Nuevo cliente</button>
      </div>
     <div id="formContainer" style="display:flex; gap:20px; max-width: none;">
     <form id="saleForm" style="flex:1;">
+        
+
+        <div class="inline-options">
+            <p>Punto de venta</p>
+
+            <label class="option">
+                <input type="radio" name="salesChannel" value="SHOWROOM">
+                Showroom
+            </label>
+
+            <label class="option">
+                <input type="radio" name="salesChannel" value="VIVO">
+                Vivo
+            </label>
+
+            <label class="option">
+                <input type="radio" name="salesChannel" value="WHATSAPP">
+                WhatsApp
+            </label>
+        </div>
+
         <label>
             Cliente:
             <input type="text" id="customer_name" placeholder="Escriba nombre o apellido" autocomplete="off">
@@ -41,7 +62,7 @@
         <label>
             Monto:
             <input type="number" step="0.01" id="amount" required>
-        </label><br>
+        </label>
 
         <label>
             Método de pago:
@@ -50,7 +71,7 @@
                 <option value="card">Tarjeta/QR</option>
                 <option value="cash">Efectivo</option>
             </select>
-        </label><br>
+        </label>
 
         <label>
             Pagado:
@@ -60,7 +81,29 @@
             </select>
         </label>
 
-            <h4>Aclaración:</h4>
+        <div class="inline-options">
+            <label class="option">
+                <input type="checkbox" id="hasShipping">
+                Con envío
+            </label>
+            <label class="option">
+                <input type="checkbox" id="hasChange" >
+                Cambio
+            </label>
+
+            <label class="option">
+                <input type="checkbox" id="isCash" >
+                Efectivo
+            </label>
+        </div>
+
+        <div id="shippingDateContainer" style="display: none;">
+            <label>Fecha de envío</label>
+            <input type="date" id="shippingDate">
+        </div>
+
+
+            <label>Aclaración:</label>
                 <input type="text" id="notes" placeholder="Aclaraciones(Cambios/pedido en efectivo/dejar en porteria)">
             
         
@@ -93,9 +136,7 @@
      <div id="headerForm" style="display:flex; justify-content: space-between; align-items: center; max-width: 700px; margin: 0 auto 10px auto;">
     <h2 style="display:flex; align-items:center; justify-content: space-between;">Ultimas Ventas</h2>
 
-        <a href="{{ url_for('explore_sales') }}">
-        <button id="btnNewCustomer">Ver más</button>
-    </a>
+    <a href="{{ url_for('explore_sales') }}" id="btnNewCustomer" class="btn">Ver más</a>
     
     </div>
     <div id="headerForm" style="display:flex; justify-content: space-between; align-items: center; max-width: 60%; margin: 0 auto 10px auto;">

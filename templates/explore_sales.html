@@ -3,140 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <title>Explorar Ventas</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='/css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <header class="site-header">
+        <a href="{{ url_for('index') }}" class="logo-link">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Lunita Val" class="logo">
+            <span class="site-title">Lunita Val | Ventas</span>
+        </a>
+    </header>
+
     <div class="container">
-        <h1>Explorar Ventas</h1>
 
-        <!-- Filtros -->
-        <form class="filters" method="get">
-            <div class="autocomplete-wrapper" style="position: relative; display: inline-block;">
-                <input type="text" name="customer" id="customer-input" placeholder="Cliente" autocomplete="off" value="{{ request.args.get('customer','') }}">
-                <div id="customer-suggestions" class="suggestions"></div>
-            </div>
-            <input type="text" name="payment_method" placeholder="Método de pago" value="{{ request.args.get('payment_method','') }}">
-            <select name="paid">
-                <option value="">Pago / No pago</option>
-                <option value="si" {% if request.args.get('paid') == 'si' %}selected{% endif %}>Si</option>
-                <option value="no" {% if request.args.get('paid') == 'no' %}selected{% endif %}>No</option>
-            </select>
-            <div class="date-filters">
-                <label for="date_from">Desde:</label>
-                <input type="date" name="date_from" id="date_from" value="{{ request.args.get('date_from','') }}">
+        <!-- Título y botón para crear venta -->
+        <div class="page-header" style="display:flex; justify-content: space-between; align-items:center; max-width:700px; margin:0 auto 10px auto;">
+            <h2>Explorar Ventas</h2>
+            <a href="{{ url_for('index') }}" class="btnNewCustomer">Ir a crear venta</a>
+        </div>
 
-                <label for="date_to">Hasta:</label>
-                <input type="date" name="date_to" id="date_to" value="{{ request.args.get('date_to','') }}">
-            </div>
-            <button type="submit">Filtrar</button>  
+        <!-- Formulario de filtros -->
+        <div class="filters-container">
+            <form class="filters" method="get">
+                <div class="autocomplete-wrapper" style="position: relative;">
+                    <input type="text" name="customer" id="customer-input" placeholder="Cliente" autocomplete="off"
+                        value="{{ filters.customer }}">
+                    <input type="hidden" id="customer_id" name="customer_id">
+                    <div id="customer-suggestions" class="suggestions"></div>
+                </div>
 
-        </form>
-            <h2 style="display:flex; align-items:center; justify-content: space-between;">Ultimas Ventas
-                        <a href="{{ url_for('index') }}">
-        <button id="btnNewCustomer">Ir a crear venta</button>
-    </a>
-    </h2>
+                <input type="text" name="payment_method" placeholder="Método de pago" value="{{ filters.payment_method }}">
+
+                <select name="paid">
+                    <option value="">Pago / No pago</option>
+                    <option value="si" {% if filters.paid == 'si' %}selected{% endif %}>Si</option>
+                    <option value="no" {% if filters.paid == 'no' %}selected{% endif %}>No</option>
+                </select>
+
+                <div class="date-filters">
+                    <label for="date_from">Desde:</label>
+                    <input type="date" name="date_from" id="date_from" value="{{ filters.date_from }}">
+                    <label for="date_to">Hasta:</label>
+                    <input type="date" name="date_to" id="date_to" value="{{ filters.date_to }}">
+                </div>
+
+                <button type="submit" class="btn">Filtrar</button>
+            </form>
+        </div>
+
         <!-- Tabla de ventas -->
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Cliente</th>
-                    <th>Monto</th>
-                    <th>Método de pago</th>
-                    <th>Pagado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for s in sales %}
-                <tr>
-                    <td>{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
-                    <td>{{ s.customer.first_name }} {{ s.customer.last_name }}</td>
-                    <td class="amount" data-amount="{{ s.amount }}"></td>
-                    <td>{{ s.payment_method }}</td>
-                    <td>{{ "Si" if s.paid else "No" }}</td>
-                    <td>
-                        <a href="{{ url_for('generate_label', sale_id=s.id) }}" target="_blank" class="btn">Imprimir comprobante</a>
-                        {% if not s.paid %}
-                        <button class="btn-pay" data-sale="{{ s.id }}">Marcar como pagado</button>
-                        {% endif %}
-                    </td>
-                </tr>
+        <div class="table-container" style="max-width:80%; margin:0 auto 20px auto;">
+                <table id="salesTable" border="1">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Monto</th>
+                        <th>Método de pago</th>
+                        <th>Pagado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sales %}
+                    <tr>
+                        <td>{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>{{ s.customer.first_name }} {{ s.customer.last_name }}</td>
+                        <td class="amount" data-amount="{{ s.amount }}"></td>
+                        <td>{{ s.payment_method }}</td>
+                        <td class="paid-status">{{ "Si" if s.paid else "No" }}</td>
+                        <td>
+                            <a href="{{ url_for('pdf.download_sale_label', sale_id=s.id) }}" target="_blank" class="btn">Descargar comprobante</a>
+
+                            <!-- Borrar venta -->
+                            <button 
+                                class="button button-delete" 
+                                data-url="{{ url_for('sales.delete_existing_sale', id=s.id) }}"
+                            >Borrar</button>
+
+                            <!-- Marcar como pagada -->
+                            {% if not s.paid %}
+                            <button 
+                                class="btn-pay" 
+                                data-sale="{{ s.id }}" 
+                                data-url="{{ url_for('sales.mark_sale_paid_endpoint', sale_id=s.id) }}"
+                            >Marcar como pago</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+    </table>
+
+            <!-- Paginación -->
+            <div class="pagination" style="text-align:center; margin-top:20px;">
+                {% if page > 1 %}
+                <a href="{{ url_for('sales.explore_sales_page', page=page-1,
+                    customer=filters.customer,
+                    payment_method=filters.payment_method,
+                    paid=filters.paid,
+                    date_from=filters.date_from,
+                    date_to=filters.date_to) }}">« Anterior</a>
+                {% endif %}
+
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                        <strong>{{ p }}</strong>
+                    {% else %}
+                        <a href="{{ url_for('sales.explore_sales_page', page=p,
+                            customer=filters.customer,
+                            payment_method=filters.payment_method,
+                            paid=filters.paid,
+                            date_from=filters.date_from,
+                            date_to=filters.date_to) }}">{{ p }}</a>
+                    {% endif %}
                 {% endfor %}
-            </tbody>
-        </table>
+
+                {% if page < total_pages %}
+                <a href="{{ url_for('sales.explore_sales_page', page=page+1,
+                    customer=filters.customer,
+                    payment_method=filters.payment_method,
+                    paid=filters.paid,
+                    date_from=filters.date_from,
+                    date_to=filters.date_to) }}">Siguiente »</a>
+                {% endif %}
+            </div>
+
+        </div>
     </div>
+
+    <script src="{{ url_for('static', filename='js/explore_sales.js') }}"></script>
 </body>
-
-
-
-<script>
-const input = document.getElementById('customer-input');
-const suggestions = document.getElementById('customer-suggestions');
-
-let timeout = null;
-
-input.addEventListener('input', () => {
-    clearTimeout(timeout);
-    const query = input.value.trim();
-    if (!query) {
-        suggestions.innerHTML = '';
-        return;
-    }
-
-    timeout = setTimeout(() => {
-        fetch(`/customers/search?q=${encodeURIComponent(query)}`)
-            .then(res => res.json())
-            .then(data => {
-                suggestions.innerHTML = '';
-                // Limitar a 5 resultados
-                data.slice(0,5).forEach(c => {
-                    const div = document.createElement('div');
-                    div.classList.add('suggestion-item');
-                    div.textContent = `${c.first_name} ${c.last_name} (${c.city})`;
-                    div.addEventListener('click', () => {
-                        input.value = `${c.first_name} ${c.last_name}`;
-                        suggestions.innerHTML = '';
-                    });
-                    suggestions.appendChild(div);
-                });
-            });
-    }, 300); // espera 300ms para no saturar requests
-});
-
-
-document.querySelectorAll('.btn-pay').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const saleId = btn.getAttribute('data-sale');
-        fetch(`/sales/${saleId}/mark_paid`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'}
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.message) {
-                alert(data.message);
-                // Actualizar la tabla visualmente
-                const td = btn.parentElement;
-                td.previousElementSibling.textContent = "Si"; // cambia Pagado
-                btn.remove(); // quita el botón
-            }
-        })
-        .catch(err => console.error(err));
-    });
-});
-
-
-document.querySelectorAll('.amount').forEach(td => {
-    const amount = parseFloat(td.getAttribute('data-amount'));
-    td.textContent = amount.toLocaleString('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: 0
-    });
-});
-</script>
-
-
 </html>
