@@ -283,11 +283,11 @@ channelRadios.forEach(radio => {
 
 
 // EDITAR VENTAS //
+
  
     window.editSale = async function(id) {
     const res = await fetch(`${apiUrl}/${id}`);
     const sale = await res.json();
-    
 
     editingSaleId = id;
     selectedCustomer = { 
@@ -326,6 +326,10 @@ channelRadios.forEach(radio => {
         if (shippingDateInput) shippingDateInput.value = sale.shipping_date || "";
     }
 
+        
+        // Scroll suave al top de la página
+        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+
     updatePaidCashConstraints();
 
     const infoDiv = document.querySelector("#customer_info");
@@ -333,6 +337,7 @@ channelRadios.forEach(radio => {
     document.querySelector("#info_address").textContent = selectedCustomer.address;
     document.querySelector("#info_city").textContent = selectedCustomer.city;
     infoDiv.style.display = "block";
+    
 
     const submitBtn = saleForm.querySelector("button[type=submit]");
     submitBtn.textContent = "Guardar cambios";
@@ -351,11 +356,11 @@ channelRadios.forEach(radio => {
     const headerH2 = document.querySelector("#headerForm h2");
     if (headerH2) headerH2.textContent = `Editar venta #${id}`;
 
-    // Mostrar form
     const formContainer = document.getElementById("saleFormContainer");
     formContainer.style.display = "block";
 
-    showSaleFormAndScroll()
+
+
 };
 
 
