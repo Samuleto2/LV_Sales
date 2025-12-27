@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Clientes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+    <header>
+        <h1>Clientes</h1>
+    </header>
+
+    <div style="max-width:900px; margin:0 auto;">
+        <label>
+            Buscar cliente:
+            <input type="text" id="customerSearch" placeholder="Nombre o apellido">
+        </label>
+
+        <table id="customersTable">
+            <thead>
+                <tr> 
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Dirección</th>
+                    <th>Ciudad</th>
+                    <th>Teléfono</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Clientes se cargan aquí -->
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <button id="prevPage">Anterior</button>
+            <span id="pageInfo"></span>
+            <button id="nextPage">Siguiente</button>
+        </div>
+    </div>
+
+    <div id="customerModal" class="modal">
+    <div class="modal-content">
+        <h2 id="modalTitle">Editar Cliente</h2>
+        <form id="customerForm">
+            <input type="hidden" id="customerId">
+            <label>Nombre: <input type="text" id="cf_first_name" required></label><br>
+            <label>Apellido: <input type="text" id="cf_last_name" required></label><br>
+            <label>Dirección: <input type="text" id="cf_address" required></label><br>
+            <label>Ciudad: <input type="text" id="cf_city" required></label><br>
+            <label>Teléfono: <input type="text" id="cf_phone" required></label><br>
+            <label>Descripción: <textarea id="cf_description"></textarea></label><br>
+            <div style="margin-top:10px;">
+                <button type="submit">Guardar</button>
+                <button type="button" id="modalCancel">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <script src="{{ url_for('static', filename='js/clients_mgt') }}"></script>
+</body>
+</html>

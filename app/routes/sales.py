@@ -1,13 +1,22 @@
 # routes/sales.py
 from flask import Blueprint, jsonify, request, render_template, redirect, url_for
 from app.models.sale import Sale 
-from app.services.sales_services import last_sales_service, create_sale, update_sale, delete_sale, get_sale_by_id, update_sale, filter_sales, mark_sale_paid, explore_sales
+from app.services.sales_services import(
+    last_sales_service, create_sale, update_sale, delete_sale, 
+    get_sale_by_id, filter_sales, mark_sale_paid, explore_sales, 
+    get_sales_by_turn,get_shipments_by_day,get_shipping_calendar,update_shipment
+    )
+
 from app.serializers.sales_serializer import(
     sales_to_dict,
     sales_to_list
 )
 
 sales_bp = Blueprint("sales", __name__, url_prefix="/sales")
+
+@sales_bp.get("/shipments")
+def shipments_view():
+    return render_template("shipments.html")
 
 # ---------- Helpers ----------
 
@@ -132,3 +141,48 @@ def get_last_sales():
         }
         for s in sales
     ])
+
+@sales_bp.route("/turn", methods=["GET"])
+def sales_by_turn():
+    """
+    Endpoint: /sales/turn?start=YYYY-MM-DDTHH:MM&end=YYYY-MM-DDTHH:MM
+    Devuelve las ventas del turno filtradas por fecha y hora.
+    """
+    start_str = request.args.get("start")
+    end_str = request.args.get("end")
+
+    if not start_str or not end_str:
+        return jsonify({"error": "Debe proporcionar start y end"}), 400
+
+    try:
+        start_dt = datetime.fromisoformat(start_str)
+        end_dt = datetime.fromisoformat(end_str)
+    except ValueError:
+        return jsonify({"error": "Formato de fecha inválido. Use ISO 8601"}), 400
+
+    # Traer ventas del turno usando tu service
+    sales = get_sales_by_turn(start_dt, end_dt)
+
+    # Serializar usando tu serializer
+    sales_list = sales_to_list(sales)
+
+    return jsonify(sales_list)
+
+@sales_bp.get("/shipments/calendar")
+def shipments_calendar():
+    data = get_shipping_calendar()
+    return jsonify(data), 200
+
+
+@sales_bp.get("/shipments/day/<shipping_date>")
+def shipments_by_day(shipping_date):
+    sales = get_shipments_by_day(shipping_date)
+    return jsonify([sales_to_dict(s) for s in sales]), 200
+
+@sales_bp.put("/shipments/<int:sale_id>")
+def update_shipment_endpoint(sale_id):
+    sale = Sale.query.get_or_404(sale_id)
+    data = request.json
+
+    update_shipment(sale, data)
+    return jsonify({"ok": True})

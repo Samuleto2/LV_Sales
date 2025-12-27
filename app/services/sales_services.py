@@ -1,4 +1,5 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
+from sqlalchemy import func
 from app.models.sale import Sale
 from app.models.customer import Customer
 from app.extensions import db
@@ -167,3 +168,113 @@ def explore_sales(filters):
         "total_sales": total_sales,
         "total_pages": total_pages
     }
+
+def get_sales_by_turn(start_time: datetime, end_time: datetime):
+    """
+    Devuelve las ventas entre start_time y end_time.
+    """
+    return (
+        db.session.query(Sale)
+        .filter(Sale.sale_date >= start_time)
+        .filter(Sale.sale_date <= end_time)
+        .order_by(Sale.sale_date.asc())
+        .all()
+    )
+
+
+def get_shipments_calendar(from_date: date, to_date: date):
+    """
+    Devuelve un dict con los envíos agrupados por día
+    entre from_date y to_date.
+    """
+    sales = (
+        Sale.query
+        .filter(
+            Sale.has_shipping.is_(True),
+            Sale.shipping_date.isnot(None),
+            Sale.shipping_date.between(from_date, to_date)
+        )
+        .order_by(Sale.shipping_date.asc())
+        .all()
+    )
+
+    result = {}
+
+    for s in sales:
+        key = s.shipping_date.isoformat()
+
+        if key not in result:
+            result[key] = {
+                "count": 0,
+                "sales": []
+            }
+
+        result[key]["count"] += 1
+        result[key]["sales"].append({
+            "id": s.id,
+            "customer": f"{s.customer.customer_first_name} {s.customer.customer_last_name}",
+            "address": s.customer.customer_address,
+            "city": s.customer.customer_city,
+            "notes": s.notes,
+            "label_url": f"/sales/{s.id}/label"
+        })
+
+    return result
+
+
+def update_shipment(sale, data):
+    """
+    Actualiza fecha de envío y/o notas del envío.
+    """
+    if not sale:
+        return False
+
+    if data.get("shipping_date"):
+        sale.shipping_date = date.fromisoformat(data["shipping_date"])
+
+    if "notes" in data:
+        sale.notes = data["notes"]
+
+    db.session.commit()
+    return True
+
+
+def get_shipping_calendar(days=15):
+    """
+    Devuelve un dict con la cantidad de envíos por día
+    desde hoy hasta hoy + days.
+    """
+    today = date.today()
+    end_date = today + timedelta(days=days)
+
+    rows = (
+        db.session.query(
+            Sale.shipping_date,
+            func.count(Sale.id)
+        )
+        .filter(
+            Sale.has_shipping.is_(True),
+            Sale.shipping_date.isnot(None),
+            Sale.shipping_date >= today,
+            Sale.shipping_date <= end_date
+        )
+        .group_by(Sale.shipping_date)
+        .all()
+    )
+
+    return {row[0].isoformat(): row[1] for row in rows}
+
+
+def get_shipments_by_day(shipping_date: date):
+    """
+    Devuelve los envíos de un día específico.
+    """
+    return (
+        Sale.query
+        .filter(
+            Sale.has_shipping.is_(True),
+            Sale.shipping_date == shipping_date
+        )
+        .order_by(Sale.id.asc())
+        .all()
+    )

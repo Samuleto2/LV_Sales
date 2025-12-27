@@ -1,0 +1,140 @@
+document.addEventListener("DOMContentLoaded", () => {
+    const apiPaginatedUrl = "/customers/paginated";
+    const apiUrl = "/customers";
+
+    const tableBody = document.querySelector("#customersTable tbody");
+    const customerModal = document.getElementById("customerModal");
+    const customerForm = document.getElementById("customerForm");
+    const modalCancel = document.getElementById("modalCancel");
+
+    const searchInput = document.getElementById("customerSearch");
+    const prevBtn = document.getElementById("prevPage");
+    const nextBtn = document.getElementById("nextPage");
+    const pageInfo = document.getElementById("pageInfo");
+
+    let currentPage = 1;
+    let currentQuery = "";
+    let editingCustomerId = null;
+    let totalPages = 1;
+    
+
+    searchInput.addEventListener("input", () => {
+    currentQuery = searchInput.value.trim();
+    currentPage = 1;               // reset página
+    loadCustomers(currentPage, currentQuery);
+    });
+
+    prevBtn.addEventListener("click", () => {
+    if (currentPage > 1) {
+            currentPage--;
+            loadCustomers(currentPage, currentQuery);
+        }
+    });
+
+    nextBtn.addEventListener("click", () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            loadCustomers(currentPage, currentQuery);
+        }
+    });
+
+    // ===== EDITAR =====
+    window.editCustomer = async function (id) {
+        const res = await fetch(`${apiUrl}/${id}`);
+        if (!res.ok) {
+            alert("Error cargando cliente");
+            return;
+        }
+
+        const c = await res.json();
+
+        editingCustomerId = id;
+        document.getElementById("modalTitle").textContent = "Editar cliente";
+        document.getElementById("customerId").value = c.id;
+        document.getElementById("cf_first_name").value = c.first_name;
+        document.getElementById("cf_last_name").value = c.last_name;
+        document.getElementById("cf_address").value = c.address;
+        document.getElementById("cf_city").value = c.city;
+        document.getElementById("cf_phone").value = c.phone;
+        document.getElementById("cf_description").value = c.description || "";
+
+        customerModal.style.display = "block";
+    };
+
+    // ===== CERRAR MODAL =====
+    modalCancel.addEventListener("click", () => {
+        customerModal.style.display = "none";
+        editingCustomerId = null;
+    });
+
+    // ===== GUARDAR =====
+    customerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const payload = {
+            first_name: document.getElementById("cf_first_name").value,
+            last_name: document.getElementById("cf_last_name").value,
+            address: document.getElementById("cf_address").value,
+            city: document.getElementById("cf_city").value,
+            phone: document.getElementById("cf_phone").value,
+            description: document.getElementById("cf_description").value
+        };
+
+        const res = await fetch(`${apiUrl}/${editingCustomerId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            alert("Error al guardar");
+            return;
+        }
+
+        customerModal.style.display = "none";
+        editingCustomerId = null;
+        loadCustomers(currentPage, currentQuery);
+    });
+
+    // ===== CARGA TABLA =====
+async function loadCustomers(page = 1, query = "") {
+    const res = await fetch(
+        `${apiPaginatedUrl}?page=${page}&per_page=10&q=${encodeURIComponent(query)}`
+    );
+
+    const data = await res.json();
+    tableBody.innerHTML = "";
+
+    if (!data.customers.length) {
+        tableBody.innerHTML = "<tr><td colspan='7'>Sin resultados</td></tr>";
+        pageInfo.textContent = "";
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        return;
+    }
+
+    data.customers.forEach(c => {
+        tableBody.innerHTML += `
+            <tr>
+                <td>${c.first_name}</td>
+                <td>${c.last_name}</td>
+                <td>${c.address}</td>
+                <td>${c.city}</td>
+                <td>${c.phone}</td>
+                <td>${c.description || ""}</td>
+                <td>
+                    <button onclick="editCustomer(${c.id})">Editar</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    currentPage = data.page;
+    totalPages = data.pages;
+
+    pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+    prevBtn.disabled = currentPage <= 1;
+    nextBtn.disabled = currentPage >= totalPages;
+}
+loadCustomers();
+});

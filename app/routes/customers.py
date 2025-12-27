@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, render_template
 from app.serializers.customer_serializer import(
     customer_to_dict,
     customers_to_list
@@ -9,10 +9,15 @@ from app.services.customers_services import (
     create_customer,
     update_customer,
     delete_customer,
-    search_customers
+    search_customers,
+    get_customers_paginated_service
 )
 
 customers_bp = Blueprint("customers", __name__, url_prefix="/customers")
+
+@customers_bp.get("/manage")
+def manage_customers_view():
+    return render_template("clientes.html")
 
 # GET /customers
 @customers_bp.get("")
@@ -74,3 +79,30 @@ def search():
     customers = search_customers(query)
     result = [customer_to_dict(c) for c in customers]
     return jsonify(result), 200
+
+
+
+# GET /customers/paginated?page=1&per_page=10&q=nombre
+@customers_bp.get("/paginated")
+def get_customers_paginated():
+    try:
+        page = int(request.args.get("page", 1))
+        per_page = int(request.args.get("per_page", 10))
+    except ValueError:
+        return jsonify({"error": "Parámetros de página inválidos"}), 400
+
+    query = request.args.get("q", "").strip()
+    
+    # Llamás al service, que se encarga de la DB
+    pagination = get_customers_paginated_service(page=page, per_page=per_page, query=query)
+    
+    # Solo serializar los resultados
+    customers_list = [customer_to_dict(c) for c in pagination.items]
+
+    return jsonify({
+        "customers": customers_list,
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "total": pagination.total,
+        "pages": pagination.pages
+    })

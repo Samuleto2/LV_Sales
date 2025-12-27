@@ -76,3 +76,18 @@ def search_customers(query, limit=10):
         .limit(limit)
         .all()
     )
+def get_customers_paginated_service(page=1, per_page=10, query=""):
+    base_query = Customer.query
+
+    if query:
+        q = query.lower()
+        base_query = base_query.filter(
+            db.or_(
+                db.func.lower(Customer.first_name).like(f"%{q}%"),
+                db.func.lower(Customer.last_name).like(f"%{q}%")
+            )
+        )
+
+    base_query = base_query.order_by(Customer.first_name.asc(), Customer.last_name.asc())
+    pagination = base_query.paginate(page=page, per_page=per_page, error_out=False)
+    return pagination

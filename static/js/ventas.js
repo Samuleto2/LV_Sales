@@ -49,6 +49,57 @@ document.addEventListener("DOMContentLoaded", () => {
         return date.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
+// ----------------------------
+// Variables globales
+// ----------------------------
+let turnSales = [];  // ventas desde el último reset
+
+// ----------------------------
+// Función para actualizar el dashboard
+// ----------------------------
+function updateDashboard(sales) {
+    let totalVendido = 0;
+    let cantidadVentas = 0;
+    let totalPagado = 0;
+    let totalImpago = 0;
+
+    sales.forEach(sale => {
+        const amount = Number(sale.amount) || 0; // <-- asegurar número
+        const paid = !!sale.paid;
+
+        totalVendido += amount;
+        cantidadVentas += 1;
+        if (paid) totalPagado += amount;
+        else totalImpago += amount;
+    });
+
+    document.getElementById("totalVendido").textContent = formatMoney(totalVendido);
+    document.getElementById("cantidadVentas").textContent = cantidadVentas;
+    document.getElementById("totalPagado").textContent = formatMoney(totalPagado);
+    document.getElementById("totalImpago").textContent = formatMoney(totalImpago);
+}
+
+// ----------------------------
+// Función para agregar una venta al turno
+// ----------------------------
+function addSaleToTurn(sale) {
+    sale.amount = Number(sale.amount) || 0;
+    sale.paid = !!sale.paid;
+
+    turnSales.push(sale);
+    updateDashboard(turnSales);
+}
+
+// ----------------------------
+// Botón de reset
+// ----------------------------
+document.getElementById("resetTurnBtn").addEventListener("click", () => {
+    turnSales = [];
+    updateDashboard(turnSales);
+});
+
+
+
     /** ----------------------------
      * Función para cargar ventas en tabla
      * ---------------------------- */
@@ -77,7 +128,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 setTimeout(() => row.style.backgroundColor = "", 2000);
             }
             tbody.appendChild(row);
+
+ 
         });
+
     }
 
     /** ----------------------------
@@ -257,8 +311,18 @@ saleForm.addEventListener("submit", async (e) => {
 
     showToast(result.message || "Operación completada");
 
+    const newSale = {
+    amount: parseFloat(document.querySelector("#amount").value) || 0,
+    paid: paidSelect.value === "true"
+    };
+
+    addSaleToTurn(newSale);
+
     resetSaleForm();
     loadSales(editingSaleId);
+     // Actualizar dashboard
+    
+            
 });
 
 
@@ -486,12 +550,5 @@ channelRadios.forEach(radio => {
 
 
 
-function showSaleFormAndScroll() {
-    const formContainer = document.getElementById("saleFormContainer");
-    formContainer.style.display = "block";
 
-    // Scroll al top cuando el layout ya esté listo
-    requestAnimationFrame(() => {
-        formContainer.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-}
+

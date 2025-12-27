@@ -11,6 +11,19 @@
         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Lunita Val" class="logo">
         <span class="site-title">Lunita Val | Ventas</span>
     </a>
+    <div id="salesDashboard" style="display:flex; gap:20px; align-items:center; margin-top:10px;">
+    <div><strong>Total vendido:</strong> <span id="totalVendido">0</span></div>
+    <div><strong>Cantidad de ventas:</strong> <span id="cantidadVentas">0</span></div>
+    <div><strong>Total pagado:</strong> <span id="totalPagado">0</span></div>
+    <div><strong>Total impago:</strong> <span id="totalImpago">0</span></div>
+    <button id="resetTurnBtn" style="padding:5px 10px;">Reset</button>
+</div>
+<div class="menu">
+    <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
+    <a href="{{ url_for('explore_sales') }}" class="menu_btn">Ventas</a>
+
+</div>
+
     </header>
 
 

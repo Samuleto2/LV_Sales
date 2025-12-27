@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Envíos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shipments_style.css') }}">
+</head>
+<body>
+
+<header>
+    <h1>Gestión de Envíos</h1>
+</header>
+
+<div style="max-width:1100px; margin:0 auto;">
+        <button id="printDayBtn" style="display:none;">
+            Imprimir etiquetas del día
+        </button>
+    <!-- CALENDARIO -->
+    <h3>Próximos envíos</h3>
+    <div id="calendar" class="calendar-grid"></div>
+
+    <!-- DETALLE DEL DÍA -->
+    <h3>Envíos del día</h3>
+    <div id="dayDetail">
+        <em>Seleccione un día</em>
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/shipments.js') }}"></script>
+</body>
+</html>
