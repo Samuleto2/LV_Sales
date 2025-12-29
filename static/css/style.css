@@ -206,7 +206,7 @@ a {
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #ddd;
-    max-width: 700px;
+    max-width: 600px;
     margin: 0 auto 30px auto;
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
@@ -240,11 +240,7 @@ a {
     flex: 1;
 }
 
-.form-panel {
-    background: #fff;
-    padding: 24px;
-    box-sizing: border-box;
-}
+
 
 .section-header{
   display: flex;
@@ -355,14 +351,15 @@ button {
   background: #ffffff;
   padding: 24px;
   max-width: 720px;
+  margin: 10px;
 }
 
 /* ===== FORM GROUP ===== */
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 16px;
+  gap: 3px;
+  margin-bottom: 10px;
 }
 
 .form-group label,
