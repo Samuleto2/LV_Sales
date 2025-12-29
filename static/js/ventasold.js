@@ -202,140 +202,128 @@ document.getElementById("resetTurnBtn").addEventListener("click", () => {
         infoDiv.style.display = "block";
     }
 
-  /** ----------------------------
+    /** ----------------------------
      * Crear o editar venta
      * ---------------------------- */
     const saleForm = document.querySelector("#saleForm");
     const hasShippingCheckbox = document.getElementById("hasShipping");
     const shippingDateContainer = document.getElementById("shippingDateContainer");
-    const shippingDateInput = document.getElementById("shippingDate");  
+    const shippingDateInput = document.getElementById("shippingDate");
+    const isCashCheckbox = document.getElementById("isCash");
     const hasChangeCheckbox = document.getElementById("hasChange");
-    
-    const paidRadios = document.querySelectorAll("input[name='paid']");
-    const paymentRadios = document.querySelectorAll("input[name='PaidMethod']");
-    const isCashRadio = document.getElementById("isCash");
+    const paidSelect = document.getElementById("paid");
 
-    /** ----------------------------
-     * Mostrar / ocultar fecha envío
-     * ---------------------------- */
-    if (hasShippingCheckbox) {
-        hasShippingCheckbox.addEventListener("change", () => {
-            if (!hasShippingCheckbox.checked) {
-                shippingDateContainer.style.display = "none";
-                if (shippingDateInput) shippingDateInput.value = "";
-                return;
-            }
-
-            shippingDateContainer.style.display = "block";
-
-            if (!shippingDateInput) return;
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            shippingDateInput.min = today.toISOString().split("T")[0];
-        });
+/* ----------------------------
+   Mostrar / ocultar fecha envío
+---------------------------- */
+hasShippingCheckbox.addEventListener("change", () => {
+    if (!hasShippingCheckbox.checked) {
+        shippingDateContainer.style.display = "none";
+        if (shippingDateInput) shippingDateInput.value = "";
+        return;
     }
 
-    /** ----------------------------
-     * Sincronizar restricciones entre Pago? y Método de pago
-     * ---------------------------- */
-    function syncPaymentConstraints() {
-        const paymentMethod = document.querySelector("input[name='PaidMethod']:checked")?.value;
-        const paidValue = document.querySelector("input[name='paid']:checked")?.value === "true";
+    shippingDateContainer.style.display = "block";
 
-        // Si el método es efectivo, Pago? siempre true
-        if (paymentMethod === "cash") {
-            paidRadios.forEach(radio => {
-                if (radio.value === "false") radio.disabled = true;
-                if (radio.value === "true") radio.checked = false;
-            });
-        } else {
-            
-            paidRadios.forEach(radio => radio.disabled = false);
-        }
+    if (!shippingDateInput) return;
 
-        // Si Pago? = true, deshabilitar efectivo
-        if (paidValue) {
-            if (isCashRadio) isCashRadio.disabled = true;
-            // Opcional: si estaba seleccionado efectivo, desmarcarlo
-            if (paymentMethod === "cash" && isCashRadio) isCashRadio.checked = false;
-        } else {
-            if (isCashRadio) isCashRadio.disabled = false;
-            
-        }
+    /* Bloquear fechas pasadas */
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    shippingDateInput.min = today.toISOString().split("T")[0];
+});
+
+/* ----------------------------
+   Restricciones UX: Efectivo vs Pagado
+---------------------------- */
+function updatePaidCashConstraints() {
+    if (isCashCheckbox.checked) {
+        paidSelect.value = "false";
+        paidSelect.disabled = true;
+    } else {
+        paidSelect.disabled = false;
     }
 
-    // Listeners
-    paymentRadios.forEach(radio => radio.addEventListener("change", syncPaymentConstraints));
-    paidRadios.forEach(radio => radio.addEventListener("change", syncPaymentConstraints));
+    if (paidSelect.value === "true") {
+        isCashCheckbox.checked = false;
+        isCashCheckbox.disabled = true;
+    } else {
+        isCashCheckbox.disabled = false;
+    }
+}
 
-    // Ejecutar al cargar para sincronizar estado inicial
-    syncPaymentConstraints();
+isCashCheckbox.addEventListener("change", updatePaidCashConstraints);
+paidSelect.addEventListener("change", updatePaidCashConstraints);
 
-    /** ----------------------------
-     * Submit del formulario
-     * ---------------------------- */
-    saleForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
+// Ejecutar al cargar para sincronizar con valores existentes
+updatePaidCashConstraints();
 
-        if (!selectedCustomer) {
-            return showToast("Seleccione un cliente válido", "error");
-        }
+/* ----------------------------
+   Submit del formulario
+---------------------------- */
+saleForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-        const hasShipping = hasShippingCheckbox.checked;
-        const salesChannel = document.querySelector("input[name='salesChannel']:checked")?.value;
+    if (!selectedCustomer) {
+        return showToast("Seleccione un cliente válido", "error");
+    }
 
-        if (!salesChannel) {
-            return showToast("Seleccione un punto de venta", "error");
-        }
+    const hasShipping = hasShippingCheckbox.checked;
+    const salesChannel = document.querySelector(
+        "input[name='salesChannel']:checked"
+    )?.value;
 
-        if (hasShipping && !shippingDateInput.value) {
-            return showToast("Seleccione fecha de envío", "error");
-        }
+    if (!salesChannel) {
+        return showToast("Seleccione un punto de venta", "error");
+    }
 
-        // Leer valores actuales
-        const paymentMethod = document.querySelector("input[name='PaidMethod']:checked")?.value;
-        const paid = document.querySelector("input[name='paid']:checked")?.value === "true";
+    if (hasShipping && !shippingDateInput.value) {
+        return showToast("Seleccione fecha de envío", "error");
+    }
 
-        const data = {
-            customer_id: selectedCustomer.id,
-            amount: parseFloat(document.querySelector("#amount").value),
-            payment_method: paymentMethod || null,
-            paid,
-            notes: document.querySelector("#notes").value,
+    const data = {
+        customer_id: selectedCustomer.id,
+        amount: parseFloat(document.querySelector("#amount").value),
+        payment_method: document.querySelector("#payment_method").value,
+        paid: paidSelect.value === "true",
+        notes: document.querySelector("#notes").value,
 
-            has_shipping: hasShipping,
-            shipping_date: hasShipping ? shippingDateInput.value : null,
-            sales_channel: salesChannel,
+        // Logística
+        has_shipping: hasShipping,
+        shipping_date: hasShipping ? shippingDateInput.value : null,
+        sales_channel: salesChannel,
 
-            is_cash: paymentMethod === "cash",
-            has_change: hasChangeCheckbox.checked
-        };
+        // Nuevos tags
+        is_cash: isCashCheckbox.checked,
+        has_change: hasChangeCheckbox.checked
+    };
 
-        const method = editingSaleId ? "PUT" : "POST";
-        const url = apiUrl + (editingSaleId ? `/${editingSaleId}` : "");
+    const method = editingSaleId ? "PUT" : "POST";
+    const url = apiUrl + (editingSaleId ? `/${editingSaleId}` : "");
 
-        const res = await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        });
-
-        const result = await res.json();
-
-        showToast(result.message || "Operación completada");
-
-        // Actualizar UI
-        const newSale = {
-            amount: parseFloat(document.querySelector("#amount").value) || 0,
-            paid
-        };
-
-        addSaleToTurn(newSale);
-        resetSaleForm();
-        loadSales(editingSaleId);
+    const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
     });
 
+    const result = await res.json();
+
+    showToast(result.message || "Operación completada");
+
+    const newSale = {
+    amount: parseFloat(document.querySelector("#amount").value) || 0,
+    paid: paidSelect.value === "true"
+    };
+
+    addSaleToTurn(newSale);
+
+    resetSaleForm();
+    loadSales(editingSaleId);
+     // Actualizar dashboard
+    
+            
+});
 
 
     // cachear ultimo punto de venta // 
@@ -358,9 +346,10 @@ channelRadios.forEach(radio => {
 });
 
 
-// EDITAR VENTA // 
+// EDITAR VENTAS //
 
-window.editSale = async function(id) {
+ 
+    window.editSale = async function(id) {
     const res = await fetch(`${apiUrl}/${id}`);
     const sale = await res.json();
 
@@ -372,8 +361,7 @@ window.editSale = async function(id) {
         address: sale.customer_address, 
         city: sale.customer_city 
     };
-
-    // Marcar el radio del canal de venta
+    // Marcar el radio que coincide con la venta
     const channelRadios = document.querySelectorAll("input[name='salesChannel']");
     channelRadios.forEach(radio => {
         radio.checked = radio.value === sale.sales_channel;
@@ -383,55 +371,43 @@ window.editSale = async function(id) {
     document.querySelector("#customer_id").value = sale.customer_id;
 
     document.querySelector("#amount").value = sale.amount;
+    document.querySelector("#payment_method").value = sale.payment_method;
+    document.querySelector("#paid").value = sale.paid ? "true" : "false";
     document.querySelector("#notes").value = sale.notes || "";
 
-    // Marcar los radios de pago
-    const paidRadios = document.querySelectorAll("input[name='paid']");
-    paidRadios.forEach(radio => {
-        radio.checked = (radio.value === (sale.paid ? "true" : "false"));
-    });
-
-    const paymentRadios = document.querySelectorAll("input[name='PaidMethod']");
-    paymentRadios.forEach(radio => {
-        radio.checked = (radio.value === sale.payment_method);
-    });
-
-    // Checkboxes
-    const isCashRadio = document.getElementById("isCash");
+    const isCashCheckbox = document.getElementById("isCash");
     const hasChangeCheckbox = document.getElementById("hasChange");
-    if (isCashRadio) isCashRadio.checked = sale.is_cash || false;
+    if (isCashCheckbox) isCashCheckbox.checked = sale.is_cash || false;
     if (hasChangeCheckbox) hasChangeCheckbox.checked = sale.has_change || false;
 
-    // Shipping
     const hasShippingCheckbox = document.getElementById("hasShipping");
     const shippingDateContainer = document.getElementById("shippingDateContainer");
     const shippingDateInput = document.getElementById("shippingDate");
+
     if (hasShippingCheckbox) {
         hasShippingCheckbox.checked = sale.has_shipping || false;
         shippingDateContainer.style.display = hasShippingCheckbox.checked ? "block" : "none";
         if (shippingDateInput) shippingDateInput.value = sale.shipping_date || "";
     }
 
-    // Scroll suave al top
-    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+        
+        // Scroll suave al top de la página
+        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
 
-    // Sincronizar restricciones Pago? vs Método
-    syncPaymentConstraints();
+    updatePaidCashConstraints();
 
-    // Actualizar info del cliente
     const infoDiv = document.querySelector("#customer_info");
     document.querySelector("#info_name").textContent = `${selectedCustomer.first_name} ${selectedCustomer.last_name}`;
     document.querySelector("#info_address").textContent = selectedCustomer.address;
     document.querySelector("#info_city").textContent = selectedCustomer.city;
     infoDiv.style.display = "block";
+    
 
-    // Botón submit
     const submitBtn = saleForm.querySelector("button[type=submit]");
     submitBtn.textContent = "Guardar cambios";
     submitBtn.style.backgroundColor = "green";
     submitBtn.style.color = "white";
 
-    // Botón cancelar
     if (!saleForm.querySelector(".cancel-btn")) {
         const cancelBtn = document.createElement("button");
         cancelBtn.type = "button";
@@ -441,15 +417,15 @@ window.editSale = async function(id) {
         submitBtn.insertAdjacentElement("afterend", cancelBtn);
     }
 
-    // Título del formulario
     const headerH2 = document.querySelector("#headerForm h2");
     if (headerH2) headerH2.textContent = `Editar venta #${id}`;
 
-    // Mostrar contenedor
     const formContainer = document.getElementById("saleFormContainer");
     formContainer.style.display = "block";
-};
 
+
+
+};
 
 
     /** ----------------------------

@@ -5,132 +5,189 @@
     <title>Explorar Ventas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
-    <header class="site-header">
-        <a href="{{ url_for('index') }}" class="logo-link">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Lunita Val" class="logo">
-            <span class="site-title">Lunita Val | Ventas</span>
-        </a>
-    </header>
+<div class="layout">
 
-    <div class="container">
-
-        <!-- Título y botón para crear venta -->
-        <div class="page-header" style="display:flex; justify-content: space-between; align-items:center; max-width:700px; margin:0 auto 10px auto;">
-            <h2>Explorar Ventas</h2>
-            <a href="{{ url_for('index') }}" class="btnNewCustomer">Ir a crear venta</a>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <a href="{{ url_for('index') }}" class="logo-link">
+                <img src="{{ url_for('static', filename='images/logoinvert.png') }}"
+                     alt="Logo Lunita Val"
+                     class="logo">
+            </a>
         </div>
 
-        <!-- Formulario de filtros -->
-        <div class="filters-container">
-            <form class="filters" method="get">
-                <div class="autocomplete-wrapper" style="position: relative;">
-                    <input type="text" name="customer" id="customer-input" placeholder="Cliente" autocomplete="off"
-                        value="{{ filters.customer }}">
-                    <input type="hidden" id="customer_id" name="customer_id">
-                    <div id="customer-suggestions" class="suggestions"></div>
+        <nav class="menu">
+            <a href="{{ url_for('index') }}" class="menu_btn">Vender</a>
+            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Gestión de envíos</a>
+            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Ventas</a>
+            <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
+            <a href="{{ url_for('index') }}" class="menu_btn">Retiro</a>
+            <a href="{{ url_for('index') }}" class="menu_btn">Venta en Vivo</a>
+        </nav>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+
+        <!-- HEADER -->
+        <header class="header">
+            <h1 class="view-title">Explorar Ventas</h1>
+
+            <a href="{{ url_for('index') }}" class="btn">
+                Ir a crear venta
+            </a>
+        </header>
+
+        <!-- MAIN -->
+        <main class="content">
+            <div class="content-column">
+
+                <!-- FILTROS -->
+                <section class="form-panel">
+                    <form class="filters" method="get">
+
+                        <div class="form-group autocomplete-wrapper">
+                            <label>Cliente</label>
+                            <input type="text"
+                                   name="customer"
+                                   id="customer-input"
+                                   placeholder="Cliente"
+                                   autocomplete="off"
+                                   value="{{ filters.customer }}">
+                            <input type="hidden" id="customer_id" name="customer_id">
+                            <div id="customer-suggestions" class="suggestions"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Método de pago</label>
+                            <input type="text"
+                                   name="payment_method"
+                                   placeholder="Método de pago"
+                                   value="{{ filters.payment_method }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Pago</label>
+                            <select name="paid">
+                                <option value="">Pago / No pago</option>
+                                <option value="si" {% if filters.paid == 'si' %}selected{% endif %}>Si</option>
+                                <option value="no" {% if filters.paid == 'no' %}selected{% endif %}>No</option>
+                            </select>
+                        </div>
+
+                        <div class="form-options">
+                            <label>Desde</label>
+                            <input type="date" name="date_from" value="{{ filters.date_from }}">
+
+                            <label>Hasta</label>
+                            <input type="date" name="date_to" value="{{ filters.date_to }}">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn">Filtrar</button>
+                        </div>
+
+                    </form>
+                </section>
+
+                <!-- TABLA -->
+                <div class="table-wrapper">
+                    <table id="salesTable">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Monto</th>
+                                <th>Método de pago</th>
+                                <th>Pagado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for s in sales %}
+                            <tr>
+                                <td>{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ s.customer.first_name }} {{ s.customer.last_name }}</td>
+                                <td class="amount" data-amount="{{ s.amount }}"></td>
+                                <td>{{ s.payment_method }}</td>
+                                <td class="paid-status">{{ "Si" if s.paid else "No" }}</td>
+                                <td>
+                                    <a href="{{ url_for('pdf.download_sale_label', sale_id=s.id) }}"
+                                       target="_blank"
+                                       class="btn">
+                                        Comprobante
+                                    </a>
+
+                                    <button
+                                        class="button button-delete"
+                                        data-url="{{ url_for('sales.delete_existing_sale', id=s.id) }}">
+                                        Borrar
+                                    </button>
+
+                                    {% if not s.paid %}
+                                    <button
+                                        class="btn-pay"
+                                        data-sale="{{ s.id }}"
+                                        data-url="{{ url_for('sales.mark_sale_paid_endpoint', sale_id=s.id) }}">
+                                        Marcar pago
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
 
-                <input type="text" name="payment_method" placeholder="Método de pago" value="{{ filters.payment_method }}">
-
-                <select name="paid">
-                    <option value="">Pago / No pago</option>
-                    <option value="si" {% if filters.paid == 'si' %}selected{% endif %}>Si</option>
-                    <option value="no" {% if filters.paid == 'no' %}selected{% endif %}>No</option>
-                </select>
-
-                <div class="date-filters">
-                    <label for="date_from">Desde:</label>
-                    <input type="date" name="date_from" id="date_from" value="{{ filters.date_from }}">
-                    <label for="date_to">Hasta:</label>
-                    <input type="date" name="date_to" id="date_to" value="{{ filters.date_to }}">
-                </div>
-
-                <button type="submit" class="btn">Filtrar</button>
-            </form>
-        </div>
-
-        <!-- Tabla de ventas -->
-        <div class="table-container" style="max-width:80%; margin:0 auto 20px auto;">
-                <table id="salesTable" border="1">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Cliente</th>
-                        <th>Monto</th>
-                        <th>Método de pago</th>
-                        <th>Pagado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for s in sales %}
-                    <tr>
-                        <td>{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td>{{ s.customer.first_name }} {{ s.customer.last_name }}</td>
-                        <td class="amount" data-amount="{{ s.amount }}"></td>
-                        <td>{{ s.payment_method }}</td>
-                        <td class="paid-status">{{ "Si" if s.paid else "No" }}</td>
-                        <td>
-                            <a href="{{ url_for('pdf.download_sale_label', sale_id=s.id) }}" target="_blank" class="btn">Descargar comprobante</a>
-
-                            <!-- Borrar venta -->
-                            <button 
-                                class="button button-delete" 
-                                data-url="{{ url_for('sales.delete_existing_sale', id=s.id) }}"
-                            >Borrar</button>
-
-                            <!-- Marcar como pagada -->
-                            {% if not s.paid %}
-                            <button 
-                                class="btn-pay" 
-                                data-sale="{{ s.id }}" 
-                                data-url="{{ url_for('sales.mark_sale_paid_endpoint', sale_id=s.id) }}"
-                            >Marcar como pago</button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-    </table>
-
-            <!-- Paginación -->
-            <div class="pagination" style="text-align:center; margin-top:20px;">
-                {% if page > 1 %}
-                <a href="{{ url_for('sales.explore_sales_page', page=page-1,
-                    customer=filters.customer,
-                    payment_method=filters.payment_method,
-                    paid=filters.paid,
-                    date_from=filters.date_from,
-                    date_to=filters.date_to) }}">« Anterior</a>
-                {% endif %}
-
-                {% for p in range(1, total_pages + 1) %}
-                    {% if p == page %}
-                        <strong>{{ p }}</strong>
-                    {% else %}
-                        <a href="{{ url_for('sales.explore_sales_page', page=p,
+                <!-- PAGINACIÓN -->
+                <div class="pagination">
+                    {% if page > 1 %}
+                        <a href="{{ url_for('sales.explore_sales_page', page=page-1,
                             customer=filters.customer,
                             payment_method=filters.payment_method,
                             paid=filters.paid,
                             date_from=filters.date_from,
-                            date_to=filters.date_to) }}">{{ p }}</a>
+                            date_to=filters.date_to) }}">
+                            « Anterior
+                        </a>
                     {% endif %}
-                {% endfor %}
 
-                {% if page < total_pages %}
-                <a href="{{ url_for('sales.explore_sales_page', page=page+1,
-                    customer=filters.customer,
-                    payment_method=filters.payment_method,
-                    paid=filters.paid,
-                    date_from=filters.date_from,
-                    date_to=filters.date_to) }}">Siguiente »</a>
-                {% endif %}
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == page %}
+                            <strong>{{ p }}</strong>
+                        {% else %}
+                            <a href="{{ url_for('sales.explore_sales_page', page=p,
+                                customer=filters.customer,
+                                payment_method=filters.payment_method,
+                                paid=filters.paid,
+                                date_from=filters.date_from,
+                                date_to=filters.date_to) }}">
+                                {{ p }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page < total_pages %}
+                        <a href="{{ url_for('sales.explore_sales_page', page=page+1,
+                            customer=filters.customer,
+                            payment_method=filters.payment_method,
+                            paid=filters.paid,
+                            date_from=filters.date_from,
+                            date_to=filters.date_to) }}">
+                            Siguiente »
+                        </a>
+                    {% endif %}
+                </div>
+
             </div>
+        </main>
 
-        </div>
     </div>
+</div>
 
-    <script src="{{ url_for('static', filename='js/explore_sales.js') }}"></script>
+<script src="{{ url_for('static', filename='js/explore_sales.js') }}"></script>
 </body>
 </html>

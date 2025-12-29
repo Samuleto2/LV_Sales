@@ -3,29 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <title>Gestión de Envíos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shipments_style.css') }}">
 </head>
+
 <body>
+<div class="layout">
 
-<header>
-    <h1>Gestión de Envíos</h1>
-</header>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <a href="{{ url_for('index') }}" class="logo-link">
+                <img src="{{ url_for('static', filename='images/logoinvert.png') }}"
+                     alt="Logo Lunita Val"
+                     class="logo">
+            </a>
+        </div>
 
-<div style="max-width:1100px; margin:0 auto;">
-        <button id="printDayBtn" style="display:none;">
-            Imprimir etiquetas del día
-        </button>
-    <!-- CALENDARIO -->
-    <h3>Próximos envíos</h3>
-    <div id="calendar" class="calendar-grid"></div>
+        <nav class="menu">
+            <a href="{{ url_for('index') }}" class="menu_btn">Vender</a>
+            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Gestión de envíos</a>
+            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Ventas</a>
+            <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
+            <a href="{{ url_for('index') }}" class="menu_btn">Retiro</a>
+            <a href="{{ url_for('index') }}" class="menu_btn">Venta en Vivo</a>
+        </nav>
+    </aside>
 
-    <!-- DETALLE DEL DÍA -->
-    <h3>Envíos del día</h3>
-    <div id="dayDetail">
-        <em>Seleccione un día</em>
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+
+        <!-- HEADER -->
+        <header class="header">
+            <h1 class="view-title">Gestión de Envíos</h1>
+
+            <button id="printDayBtn" class="btn" style="display:none;">
+                Imprimir etiquetas del día
+            </button>
+        </header>
+
+        <!-- MAIN -->
+        <main class="content">
+            <div class="content-column">
+
+                <!-- CALENDARIO -->
+                <section class="form-panel">
+                    <h3>Próximos envíos</h3>
+                    <div id="calendar" class="calendar-grid"></div>
+                </section>
+
+                <!-- DETALLE DEL DÍA -->
+                <section class="form-panel">
+                    <h3>Envíos del día</h3>
+                    <div id="dayDetail">
+                        <em>Seleccione un día</em>
+                    </div>
+                </section>
+
+            </div>
+        </main>
 
     </div>
-
 </div>
 
 <script src="{{ url_for('static', filename='js/shipments.js') }}"></script>

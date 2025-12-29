@@ -4,55 +4,125 @@
     <meta charset="UTF-8">
     <title>Clientes</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
 </head>
+
 <body>
-    <header>
-        <h1>Clientes</h1>
-    </header>
+<div class="layout">
 
-    <div style="max-width:900px; margin:0 auto;">
-        <label>
-            Buscar cliente:
-            <input type="text" id="customerSearch" placeholder="Nombre o apellido">
-        </label>
-
-        <table id="customersTable">
-            <thead>
-                <tr> 
-                    <th>Nombre</th>
-                    <th>Apellido</th>
-                    <th>Dirección</th>
-                    <th>Ciudad</th>
-                    <th>Teléfono</th>
-                    <th>Descripción</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Clientes se cargan aquí -->
-            </tbody>
-        </table>
-
-        <div class="pagination">
-            <button id="prevPage">Anterior</button>
-            <span id="pageInfo"></span>
-            <button id="nextPage">Siguiente</button>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <a href="{{ url_for('index') }}" class="logo-link">
+                <img src="{{ url_for('static', filename='images/logoinvert.png') }}"
+                     alt="Logo Lunita Val"
+                     class="logo">
+            </a>
         </div>
-    </div>
 
-    <div id="customerModal" class="modal">
+        <nav class="menu">
+            <a href="{{ url_for('index') }}" class="menu_btn">Vender</a>
+            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Gestión de envíos</a>
+            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Ventas</a>
+            <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
+            <a href="{{ url_for('index') }}" class="menu_btn">Retiro</a>
+            <a href="{{ url_for('index') }}" class="menu_btn">Venta en Vivo</a>
+        </nav>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+
+        <!-- HEADER -->
+        <header class="header">
+            <h1 class="view-title">Clientes</h1>
+        </header>
+
+        <!-- MAIN -->
+        <main class="content">
+            <div class="content-column">
+
+                <!-- BUSCADOR -->
+                <section class="form-panel">
+                    <div class="form-group">
+                        <label>Buscar cliente</label>
+                        <input type="text"
+                               id="customerSearch"
+                               placeholder="Nombre o apellido">
+                    </div>
+                </section>
+
+                <!-- TABLA -->
+                <div class="table-wrapper">
+                    <table id="customersTable">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Apellido</th>
+                                <th>Dirección</th>
+                                <th>Ciudad</th>
+                                <th>Teléfono</th>
+                                <th>Descripción</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Clientes se cargan aquí -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PAGINACIÓN -->
+                <div class="pagination">
+                    <button id="prevPage">Anterior</button>
+                    <span id="pageInfo"></span>
+                    <button id="nextPage">Siguiente</button>
+                </div>
+
+            </div>
+        </main>
+
+    </div>
+</div>
+
+<!-- MODAL (NO TOCAR IDs) -->
+<div id="customerModal" class="modal">
     <div class="modal-content">
         <h2 id="modalTitle">Editar Cliente</h2>
+
         <form id="customerForm">
             <input type="hidden" id="customerId">
-            <label>Nombre: <input type="text" id="cf_first_name" required></label><br>
-            <label>Apellido: <input type="text" id="cf_last_name" required></label><br>
-            <label>Dirección: <input type="text" id="cf_address" required></label><br>
-            <label>Ciudad: <input type="text" id="cf_city" required></label><br>
-            <label>Teléfono: <input type="text" id="cf_phone" required></label><br>
-            <label>Descripción: <textarea id="cf_description"></textarea></label><br>
-            <div style="margin-top:10px;">
+
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="cf_first_name" required>
+            </div>
+
+            <div class="form-group">
+                <label>Apellido</label>
+                <input type="text" id="cf_last_name" required>
+            </div>
+
+            <div class="form-group">
+                <label>Dirección</label>
+                <input type="text" id="cf_address" required>
+            </div>
+
+            <div class="form-group">
+                <label>Ciudad</label>
+                <input type="text" id="cf_city" required>
+            </div>
+
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="text" id="cf_phone" required>
+            </div>
+
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea id="cf_description"></textarea>
+            </div>
+
+            <div class="form-actions">
                 <button type="submit">Guardar</button>
                 <button type="button" id="modalCancel">Cancelar</button>
             </div>
@@ -60,6 +130,6 @@
     </div>
 </div>
 
-    <script src="{{ url_for('static', filename='js/clients_mgt') }}"></script>
+<script src="{{ url_for('static', filename='js/clients_mgt') }}"></script>
 </body>
 </html>
