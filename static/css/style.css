@@ -302,8 +302,9 @@ a {
 /* =========================
    TABLAS
 ========================= */
-#salesTable {
-    width: 100%;
+#salesTable, #customersTable {
+    width: 80%; /* ocupa 80% del contenedor */
+    margin: 0 auto; /* centrada */
     border-collapse: collapse;
     background-color: #fff;
     border-radius: 8px;
@@ -311,25 +312,31 @@ a {
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
-#salesTable th, #salesTable td {
+#salesTable th, #salesTable td, #customersTable th, #customersTable td {
     padding: 10px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #ddd; /* un poco más oscuro para separar filas */
     text-align: left;
     font-size: 14px;
 }
 
-#salesTable th {
+#salesTable th, #customersTable th {
     background-color: #f0f0f0;
     font-weight: bold;
 }
 
-#salesTable tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
+/* Filas pares e impares más contrastadas */
+#salesTable tbody tr:nth-child(odd), #customersTable tbody tr:nth-child(odd){
+    background-color: #f5f5f5; /* más claro */
 }
 
-#salesTable tbody tr:hover {
-    background-color: #e0f7fa;
+#salesTable tbody tr:nth-child(even), #customersTable tbody tr:nth-child(even){
+    background-color: #e0e0e0; /* más oscuro que antes */
+}
+
+#salesTable tbody tr:hover, #customersTable tbody tr:hover {
+    background-color: #b2ebf2; /* hover más visible */
     transform: scale(1.01);
+    transition: all 0.2s ease;
 }
 
 /* =========================
@@ -500,4 +507,80 @@ button {
 /* Ajuste de ancho opcional */
 .form-group.horizontal-group .left input {
     width: 120px;
+}
+.divider {
+    border: none;          /* quitar borde por defecto */
+    height: 1px;           /* grosor de la línea */
+    background-color: #ddd; /* color */
+    margin-bottom: 10px;     /* espacio arriba y abajo */
+}
+
+
+.pagination {
+    display: flex;
+    justify-content: center; /* centra la paginación */
+    align-items: center;
+    gap: 8px;                /* espacio entre botones */
+    margin: 20px 0;          /* espacio arriba y abajo */
+}
+
+.pagination .page-btn {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    color: #333;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.pagination .page-btn:hover:not(:disabled) {
+    background-color: #4A90E2;
+    color: #fff;
+    border-color: #4A90E2;
+}
+
+.pagination .page-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.pagination .page-btn.active {
+    background-color: #4A90E2;
+    color: #fff;
+    border-color: #4A90E2;
+    pointer-events: none;
+}
+
+
+
+.modal {
+    display: none; /* oculto por defecto */
+    position: fixed;
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.5); /* fondo semitransparente */
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto; /* centrado vertical y horizontal */
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    position: relative;
+}
+
+.modal .close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 22px;
+    cursor: pointer;
 }

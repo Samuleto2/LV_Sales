@@ -123,7 +123,7 @@ async function loadCustomers(page = 1, query = "") {
                 <td>${c.phone}</td>
                 <td>${c.description || ""}</td>
                 <td>
-                    <button onclick="editCustomer(${c.id})">Editar</button>
+                    <button onclick="editCustomer(${c.id})" class="btn">Editar</button>
                 </td>
             </tr>
         `;

@@ -121,6 +121,7 @@
                         </div>
 
                         <!-- Método -->
+                         <hr class="divider">
                         <div class="form-group">
                             <label>Método de pago:</label>
                             <section id="payment_method" class="form-options">
@@ -129,7 +130,7 @@
                                 <label class="option"><input type="radio" name="PaidMethod" value="cash" id="isCash"> Efectivo</label>
                             </section>
                         </div>
-
+                        <hr class="divider">
                         <!-- Flags -->
                         <div class="form-group">
                             <label>Adicional:</label>
@@ -138,7 +139,7 @@
                             <label class="option"><input type="checkbox" id="hasChange"> Cambio</label>
                             </section>
                             </div>
-
+                        <hr class="divider">
                         <!-- Fecha envío -->
                         <div id="shippingDateContainer" class="form-group hidden">
                             <label>Fecha de envío:</label>
@@ -148,7 +149,7 @@
                         <!-- Notas -->
                         <div class="form-group">
                             <label>Aclaración</label>
-                            <input type="text" class="input-text" id="notes">
+                            <input type="text" class="input-text" id="notes" placeholder="Informacion para el cadete">
                         </div>
 
                         <!-- Acciones -->
@@ -211,7 +212,7 @@
                     <h2>Últimas ventas</h2>
                     <a href="{{ url_for('explore_sales') }}" class="btn">Ver más</a>
                 </div>
-
+                <br>
                 <div class="table-wrapper" >
                     <table id="salesTable">
                         <thead>
