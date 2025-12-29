@@ -139,19 +139,19 @@ async function loadDay(date, el) {
                     Fecha envío: ${date}<br>
                     Notas: ${s.notes || "-"}<br>
 
-                    <button onclick="enableEdit(${s.id})">Editar</button>
-                    <button onclick="downloadPDF(${s.id})">Etiqueta</button>
+                    <button onclick="enableEdit(${s.id})" class="button-edit">Editar</button>
+                    <button onclick="downloadPDF(${s.id})" class="btn" >Etiqueta</button>
                 </div>
 
                 <div class="edit-mode" style="display:none;">
                     Fecha envío:
-                    <input type="date" id="edit-date-${s.id}" value="${date}"><br>
+                    <input type="date" class="input-text" id="edit-date-${s.id}" value="${date}"><br>
 
                     Notas:
-                    <textarea id="edit-notes-${s.id}">${s.notes || ""}</textarea><br>
+                    <textarea class="input-text" id="edit-notes-${s.id}">${s.notes || ""}</textarea><br>
 
-                    <button onclick="saveEdit(${s.id})">Guardar</button>
-                    <button onclick="cancelEdit(${s.id})">Cancelar</button>
+                    <button onclick="saveEdit(${s.id})" class="button-edit">Guardar</button>
+                    <button onclick="cancelEdit(${s.id})" class="button-cancel">Cancelar</button>
                 </div>
             </div>
         `;
@@ -203,6 +203,9 @@ async function saveEdit(id) {
 // ======================
 // DRAG START
 // ======================
+
+
+
 document.addEventListener("dragstart", e => {
     if (e.target.classList.contains("shipment-card")) {
         e.dataTransfer.setData("text/plain", e.target.dataset.id);
@@ -217,7 +220,14 @@ document.addEventListener("dragend", e => {
 });
 
 
+
+
+
+
+
 // ======================
 // INIT
 // ======================
 document.addEventListener("DOMContentLoaded", loadCalendar);
+
+
