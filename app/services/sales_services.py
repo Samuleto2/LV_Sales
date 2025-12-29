@@ -23,28 +23,36 @@ def parse_sale_data(data, is_update=False):
     if not isinstance(data, dict):
         raise ValueError("Datos inválidos")
 
+    # --- Tipo de entrega ---
+    delivery_type = data.get("delivery_type")
+
+    if not is_update and delivery_type not in ("cadeteria", "retiro", "correo"):
+        raise ValueError("Tipo de entrega inválido")
+
+    # Regla de negocio: SOLO cadetería tiene envío
+    has_shipping = delivery_type == "cadeteria"
+
     # --- Punto de venta ---
     if not is_update and not data.get("sales_channel"):
         raise ValueError("Punto de venta requerido")
 
-    has_shipping = bool(data.get("has_shipping", False))
-
-    if has_shipping and not data.get("shipping_date"):
-        raise ValueError("Fecha de envío requerida")
-
-    # --- Fechas ---
+    # --- Fecha de envío (solo cadetería) ---
     shipping_date = None
     if has_shipping:
+        if not data.get("shipping_date"):
+            raise ValueError("Fecha de envío requerida para cadetería")
+
         shipping_date = datetime.fromisoformat(
             data["shipping_date"]
         ).date()
 
         if shipping_date < date.today():
             raise ValueError("La fecha de envío no puede ser pasada")
-        
-     # --- Restricciones efectivo vs pagado ---
+
+    # --- Restricciones efectivo vs pagado ---
     is_cash = bool(data.get("is_cash", False))
     paid = bool(data.get("paid", False))
+
     if is_cash and paid:
         raise ValueError("No se puede marcar como pagado si es efectivo")
     if paid and is_cash:
@@ -54,12 +62,13 @@ def parse_sale_data(data, is_update=False):
         "customer_id": data.get("customer_id"),
         "amount": data.get("amount"),
         "payment_method": data.get("payment_method"),
-        "paid": bool(data.get("paid", False)),
+        "paid": paid,
         "notes": data.get("notes"),
+        "delivery_type": delivery_type,
         "has_shipping": has_shipping,
         "shipping_date": shipping_date,
         "sales_channel": data.get("sales_channel"),
-        "is_cash": bool(data.get("is_cash", False)),
+        "is_cash": is_cash,
         "has_change": bool(data.get("has_change", False))
     }
 

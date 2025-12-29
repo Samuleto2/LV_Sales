@@ -1,140 +1,192 @@
+/** ----------------------------
+ * Función para mostrar mensajes tipo toast
+ * ---------------------------- */
+function showToast(message, type = "success") {
+    const toast = document.createElement("div");
+    toast.textContent = message;
+    toast.style.position = "fixed";
+    toast.style.top = "20px";
+    toast.style.right = "20px";
+    toast.style.padding = "10px 20px";
+    toast.style.borderRadius = "5px";
+    toast.style.backgroundColor = type === "success" ? "#4caf50" : "#f44336";
+    toast.style.color = "white";
+    toast.style.zIndex = 9999;
+    toast.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const apiPaginatedUrl = "/customers/paginated";
     const apiUrl = "/customers";
 
     const tableBody = document.querySelector("#customersTable tbody");
-    const customerModal = document.getElementById("customerModal");
-    const customerForm = document.getElementById("customerForm");
-    const modalCancel = document.getElementById("modalCancel");
-
     const searchInput = document.getElementById("customerSearch");
     const prevBtn = document.getElementById("prevPage");
     const nextBtn = document.getElementById("nextPage");
     const pageInfo = document.getElementById("pageInfo");
 
+    // Crear cliente
+    const btnNewCustomer = document.getElementById("btnNewCustomer");
+    const customerFormDiv = document.getElementById("customerFormDiv");
+    const customerForm = document.getElementById("customerForm");
+    const customerFormCancel = document.getElementById("customerFormCancel");
+
+    // Editar cliente
+    const customerModal = document.getElementById("customerModal");
+    const editForm = document.getElementById("editCustomerForm");
+    const modalCancel = document.getElementById("modalCancel");
+
     let currentPage = 1;
     let currentQuery = "";
-    let editingCustomerId = null;
     let totalPages = 1;
-    
 
-    searchInput.addEventListener("input", () => {
-    currentQuery = searchInput.value.trim();
-    currentPage = 1;               // reset página
-    loadCustomers(currentPage, currentQuery);
-    });
+    /** --------- TABLA / BÚSQUEDA / PAGINACIÓN --------- */
+    async function loadCustomers(page = 1, query = "") {
+        const res = await fetch(`${apiPaginatedUrl}?page=${page}&per_page=10&q=${encodeURIComponent(query)}`);
+        const data = await res.json();
 
-    prevBtn.addEventListener("click", () => {
-    if (currentPage > 1) {
-            currentPage--;
-            loadCustomers(currentPage, currentQuery);
-        }
-    });
+        tableBody.innerHTML = "";
 
-    nextBtn.addEventListener("click", () => {
-        if (currentPage < totalPages) {
-            currentPage++;
-            loadCustomers(currentPage, currentQuery);
-        }
-    });
-
-    // ===== EDITAR =====
-    window.editCustomer = async function (id) {
-        const res = await fetch(`${apiUrl}/${id}`);
-        if (!res.ok) {
-            alert("Error cargando cliente");
+        if (!data.customers.length) {
+            tableBody.innerHTML = "<tr><td colspan='7'>Sin resultados</td></tr>";
+            pageInfo.textContent = "";
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
             return;
         }
 
-        const c = await res.json();
-
-        editingCustomerId = id;
-        document.getElementById("modalTitle").textContent = "Editar cliente";
-        document.getElementById("customerId").value = c.id;
-        document.getElementById("cf_first_name").value = c.first_name;
-        document.getElementById("cf_last_name").value = c.last_name;
-        document.getElementById("cf_address").value = c.address;
-        document.getElementById("cf_city").value = c.city;
-        document.getElementById("cf_phone").value = c.phone;
-        document.getElementById("cf_description").value = c.description || "";
-
-        customerModal.style.display = "block";
-    };
-
-    // ===== CERRAR MODAL =====
-    modalCancel.addEventListener("click", () => {
-        customerModal.style.display = "none";
-        editingCustomerId = null;
-    });
-
-    // ===== GUARDAR =====
-    customerForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const payload = {
-            first_name: document.getElementById("cf_first_name").value,
-            last_name: document.getElementById("cf_last_name").value,
-            address: document.getElementById("cf_address").value,
-            city: document.getElementById("cf_city").value,
-            phone: document.getElementById("cf_phone").value,
-            description: document.getElementById("cf_description").value
-        };
-
-        const res = await fetch(`${apiUrl}/${editingCustomerId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-            alert("Error al guardar");
-            return;
-        }
-
-        customerModal.style.display = "none";
-        editingCustomerId = null;
-        loadCustomers(currentPage, currentQuery);
-    });
-
-    // ===== CARGA TABLA =====
-async function loadCustomers(page = 1, query = "") {
-    const res = await fetch(
-        `${apiPaginatedUrl}?page=${page}&per_page=10&q=${encodeURIComponent(query)}`
-    );
-
-    const data = await res.json();
-    tableBody.innerHTML = "";
-
-    if (!data.customers.length) {
-        tableBody.innerHTML = "<tr><td colspan='7'>Sin resultados</td></tr>";
-        pageInfo.textContent = "";
-        prevBtn.disabled = true;
-        nextBtn.disabled = true;
-        return;
-    }
-
-    data.customers.forEach(c => {
-        tableBody.innerHTML += `
-            <tr>
+        data.customers.forEach(c => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
                 <td>${c.first_name}</td>
                 <td>${c.last_name}</td>
                 <td>${c.address}</td>
                 <td>${c.city}</td>
                 <td>${c.phone}</td>
                 <td>${c.description || ""}</td>
-                <td>
-                    <button onclick="editCustomer(${c.id})" class="btn">Editar</button>
-                </td>
-            </tr>
-        `;
+                <td><button class="btn edit-btn" data-id="${c.id}">Editar</button></td>
+            `;
+            tableBody.appendChild(tr);
+        });
+
+        currentPage = data.page;
+        totalPages = data.pages;
+        pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+        prevBtn.disabled = currentPage <= 1;
+        nextBtn.disabled = currentPage >= totalPages;
+
+        // Agregar event listeners a los botones de editar
+        document.querySelectorAll(".edit-btn").forEach(btn => {
+            btn.addEventListener("click", () => openEditModal(btn.dataset.id));
+        });
+    }
+
+    searchInput.addEventListener("input", () => {
+        currentQuery = searchInput.value.trim();
+        currentPage = 1;
+        loadCustomers(currentPage, currentQuery);
     });
 
-    currentPage = data.page;
-    totalPages = data.pages;
+    prevBtn.addEventListener("click", () => {
+        if (currentPage > 1) loadCustomers(--currentPage, currentQuery);
+    });
+    nextBtn.addEventListener("click", () => {
+        if (currentPage < totalPages) loadCustomers(++currentPage, currentQuery);
+    });
 
-    pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
-    prevBtn.disabled = currentPage <= 1;
-    nextBtn.disabled = currentPage >= totalPages;
-}
-loadCustomers();
+    loadCustomers();
+
+    /** --------- CREAR CLIENTE --------- */
+    btnNewCustomer.addEventListener("click", () => {
+        customerForm.reset();
+        customerFormDiv.style.display = "block";
+    });
+
+    customerFormCancel.addEventListener("click", () => {
+        customerFormDiv.style.display = "none";
+    });
+
+    customerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const data = {
+            first_name: customerForm.querySelector("#cf_first_name").value,
+            last_name: customerForm.querySelector("#cf_last_name").value,
+            address: customerForm.querySelector("#cf_address").value,
+            city: customerForm.querySelector("#cf_city").value,
+            phone: customerForm.querySelector("#cf_phone").value,
+            description: customerForm.querySelector("#cf_description").value
+        };
+
+        try {
+            const res = await fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error("Error creando cliente");
+            showToast("Cliente creado correctamente", "success");
+            customerFormDiv.style.display = "none";
+            loadCustomers(currentPage, currentQuery);
+        } catch (err) {
+            console.error(err);
+            showToast("Error al crear cliente", "error");
+        }
+    });
+
+    /** --------- EDITAR CLIENTE (modal) --------- */
+    async function openEditModal(id) {
+        try {
+            const res = await fetch(`${apiUrl}/${id}`);
+            if (!res.ok) throw new Error("Error cargando cliente");
+            const c = await res.json();
+
+            editForm.querySelector("#customerId").value = c.id;
+            editForm.querySelector("#cf_first_name").value = c.first_name;
+            editForm.querySelector("#cf_last_name").value = c.last_name;
+            editForm.querySelector("#cf_address").value = c.address;
+            editForm.querySelector("#cf_city").value = c.city;
+            editForm.querySelector("#cf_phone").value = c.phone;
+            editForm.querySelector("#cf_description").value = c.description || "";
+
+            customerModal.style.display = "block";
+        } catch (err) {
+            console.error(err);
+            showToast("Error cargando cliente", "error");
+        }
+    }
+
+    modalCancel.addEventListener("click", () => {
+        customerModal.style.display = "none";
+    });
+
+    editForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const id = editForm.querySelector("#customerId").value;
+        const data = {
+            first_name: editForm.querySelector("#cf_first_name").value,
+            last_name: editForm.querySelector("#cf_last_name").value,
+            address: editForm.querySelector("#cf_address").value,
+            city: editForm.querySelector("#cf_city").value,
+            phone: editForm.querySelector("#cf_phone").value,
+            description: editForm.querySelector("#cf_description").value
+        };
+
+        try {
+            const res = await fetch(`${apiUrl}/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error("Error al actualizar cliente");
+
+            showToast("Cliente actualizado correctamente", "success");
+            customerModal.style.display = "none";
+            loadCustomers(currentPage, currentQuery);
+        } catch (err) {
+            console.error(err);
+            showToast("Error al actualizar cliente", "error");
+        }
+    });
 });

@@ -2,15 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Envíos</title>
+    <title>Gestión de Pedidos: Retiro</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/shipments_style.css') }}">
 </head>
-
 <body>
+
 <div class="layout">
 
-    <!-- SIDEBAR -->
+    <!-- Sidebar -->
     <aside class="sidebar">
         <div class="logo">
             <a href="{{ url_for('index') }}" class="logo-link">
@@ -30,43 +29,32 @@
             <a href="{{ url_for('proximamente_view') }}" class="menu_btn">Venta en Vivo</a>
         </nav>
     </aside>
-
-    <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
-
-        <!-- HEADER -->
+<!-- HEADER -->
         <header class="header">
-            <h1 class="view-title">Gestión de Envíos</h1>
+            <h1 class="view-title">Gestión de Pedidos: Retiro</h1>
 
-            <button id="printDayBtn" class="btn" style="display:none;">
-                Imprimir etiquetas del día
-            </button>
         </header>
 
-        <!-- MAIN -->
-        <main class="content">
-            <div class="content-column">
+    <main class="content">
 
-                <!-- CALENDARIO -->
-                <section class="form-panel">
-                    <h3>Próximos envíos</h3>
-                    <div id="calendar" class="calendar-grid"></div>
-                </section>
+    <!-- Contenido -->
 
-                <!-- DETALLE DEL DÍA -->
-                <section class="form-panel">
-                    <h3>Envíos del día</h3>
-                    <div id="dayDetail">
-                        <em>Seleccione un día</em>
-                    </div>
-                </section>
-
-            </div>
-        </main>
-
+        <div class="content-column">
+                    <div class="container-proximamente">
+            <h1>🚧 Próximamente 🚧</h1>
+            <p>Estamos construyendo esta sección. Vuelve pronto para ver todas las novedades.</p>
+            <a href="{{ url_for('index') }}" class="btn">Volver al inicio</a>
+        </div>
     </div>
+    </main>
+
 </div>
 
-<script src="{{ url_for('static', filename='js/shipments.js') }}"></script>
 </body>
 </html>
+
+
+
+
+

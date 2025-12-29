@@ -44,6 +44,10 @@ def create_app():
             .all()
         )
         return render_template("explore_sales.html", sales=sales)
+    
+    @app.route('/proximamente')
+    def proximamente_view():
+        return render_template('proximamente.html')
 
     # 5️⃣ Devolver la app lista
     return app

@@ -21,11 +21,12 @@
 
         <nav class="menu">
             <a href="{{ url_for('index') }}" class="menu_btn">Vender</a>
-            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Gestión de envíos</a>
-            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Ventas</a>
+            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Gestión de Cadeteria</a>
+            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Explorar ventas</a>
             <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
-            <a href="{{ url_for('index') }}" class="menu_btn">Retiro</a>
-            <a href="{{ url_for('index') }}" class="menu_btn">Venta en Vivo</a>
+            <a href="{{ url_for('proximamente_view') }}" class="menu_btn">Retiro</a>
+            <a href="{{ url_for('proximamente_view') }}"" class="menu_btn">Correo</a>
+            <a href="{{ url_for('proximamente_view') }}" class="menu_btn">Venta en Vivo</a>
         </nav>
     </aside>
 
@@ -78,10 +79,11 @@
                             </select>
                         </div>
 
-                        <div class="form-options">
+                        <div class="form-group">
                             <label>Desde</label>
                             <input type="date" name="date_from" value="{{ filters.date_from }}">
-
+                        </div>
+                        <div class="form-group">
                             <label>Hasta</label>
                             <input type="date" name="date_to" value="{{ filters.date_to }}">
                         </div>

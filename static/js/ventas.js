@@ -210,32 +210,40 @@ document.getElementById("resetTurnBtn").addEventListener("click", () => {
     const shippingDateContainer = document.getElementById("shippingDateContainer");
     const shippingDateInput = document.getElementById("shippingDate");  
     const hasChangeCheckbox = document.getElementById("hasChange");
-    
     const paidRadios = document.querySelectorAll("input[name='paid']");
     const paymentRadios = document.querySelectorAll("input[name='PaidMethod']");
     const isCashRadio = document.getElementById("isCash");
+    const deliveryRadios = document.querySelectorAll("input[name='deliveryType']");
+
 
     /** ----------------------------
      * Mostrar / ocultar fecha envío
      * ---------------------------- */
-    if (hasShippingCheckbox) {
-        hasShippingCheckbox.addEventListener("change", () => {
-            if (!hasShippingCheckbox.checked) {
-                shippingDateContainer.style.display = "none";
-                if (shippingDateInput) shippingDateInput.value = "";
-                return;
-            }
+    const updateShippingDateVisibility = () => {
+        const deliveryType = document.querySelector(
+            "input[name='deliveryType']:checked"
+        )?.value;
 
-            shippingDateContainer.style.display = "block";
+        const hasShipping = deliveryType === "cadeteria";
 
-            if (!shippingDateInput) return;
+        shippingDateContainer.classList.toggle("hidden", !hasShipping);
 
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            shippingDateInput.min = today.toISOString().split("T")[0];
-        });
-    }
+        if (!hasShipping) {
+            shippingDateInput.value = "";
+            return;
+        }
 
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        shippingDateInput.min = today.toISOString().split("T")[0];
+    };
+
+    deliveryRadios.forEach(radio =>
+        radio.addEventListener("change", updateShippingDateVisibility)
+    );
+
+    // estado inicial
+    updateShippingDateVisibility();
     /** ----------------------------
      * Sincronizar restricciones entre Pago? y Método de pago
      * ---------------------------- */
@@ -275,66 +283,83 @@ document.getElementById("resetTurnBtn").addEventListener("click", () => {
     /** ----------------------------
      * Submit del formulario
      * ---------------------------- */
-    saleForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
+   saleForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-        if (!selectedCustomer) {
-            return showToast("Seleccione un cliente válido", "error");
-        }
+    if (!selectedCustomer) {
+        return showToast("Seleccione un cliente válido", "error");
+    }
 
-        const hasShipping = hasShippingCheckbox.checked;
-        const salesChannel = document.querySelector("input[name='salesChannel']:checked")?.value;
+    const salesChannel = document.querySelector(
+        "input[name='salesChannel']:checked"
+    )?.value;
 
-        if (!salesChannel) {
-            return showToast("Seleccione un punto de venta", "error");
-        }
+    if (!salesChannel) {
+        return showToast("Seleccione un punto de venta", "error");
+    }
 
-        if (hasShipping && !shippingDateInput.value) {
-            return showToast("Seleccione fecha de envío", "error");
-        }
+    // 🔹 NUEVO: tipo de entrega
+    const deliveryType = document.querySelector(
+        "input[name='deliveryType']:checked"
+    )?.value;
 
-        // Leer valores actuales
-        const paymentMethod = document.querySelector("input[name='PaidMethod']:checked")?.value;
-        const paid = document.querySelector("input[name='paid']:checked")?.value === "true";
+    if (!deliveryType) {
+        return showToast("Seleccione tipo de entrega", "error");
+    }
 
-        const data = {
-            customer_id: selectedCustomer.id,
-            amount: parseFloat(document.querySelector("#amount").value),
-            payment_method: paymentMethod || null,
-            paid,
-            notes: document.querySelector("#notes").value,
+    // 🔹 Solo cadetería requiere fecha
+    if (deliveryType === "cadeteria" && !shippingDateInput.value) {
+        return showToast("Seleccione fecha de envío", "error");
+    }
 
-            has_shipping: hasShipping,
-            shipping_date: hasShipping ? shippingDateInput.value : null,
-            sales_channel: salesChannel,
+    // Leer valores actuales
+    const paymentMethod = document.querySelector(
+        "input[name='PaidMethod']:checked"
+    )?.value;
 
-            is_cash: paymentMethod === "cash",
-            has_change: hasChangeCheckbox.checked
-        };
+    const paid =
+        document.querySelector("input[name='paid']:checked")?.value === "true";
 
-        const method = editingSaleId ? "PUT" : "POST";
-        const url = apiUrl + (editingSaleId ? `/${editingSaleId}` : "");
+    const data = {
+        customer_id: selectedCustomer.id,
+        amount: parseFloat(document.querySelector("#amount").value),
+        payment_method: paymentMethod || null,
+        paid,
+        notes: document.querySelector("#notes").value,
 
-        const res = await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        });
+        delivery_type: deliveryType,
+        has_shipping: deliveryType === "cadeteria",
+        shipping_date:
+            deliveryType === "cadeteria" ? shippingDateInput.value : null,
 
-        const result = await res.json();
+        sales_channel: salesChannel,
+        is_cash: paymentMethod === "cash",
+        has_change: hasChangeCheckbox.checked
+    };
 
-        showToast(result.message || "Operación completada");
+    const method = editingSaleId ? "PUT" : "POST";
+    const url = apiUrl + (editingSaleId ? `/${editingSaleId}` : "");
 
-        // Actualizar UI
-        const newSale = {
-            amount: parseFloat(document.querySelector("#amount").value) || 0,
-            paid
-        };
-
-        addSaleToTurn(newSale);
-        resetSaleForm();
-        loadSales(editingSaleId);
+    const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
     });
+
+    const result = await res.json();
+
+    showToast(result.message || "Operación completada");
+
+    // Actualizar UI
+    const newSale = {
+        amount: parseFloat(document.querySelector("#amount").value) || 0,
+        paid
+    };
+
+    addSaleToTurn(newSale);
+    resetSaleForm();
+    loadSales(editingSaleId);
+});
 
 
 

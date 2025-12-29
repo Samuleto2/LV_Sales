@@ -21,11 +21,12 @@
 
         <nav class="menu">
             <a href="{{ url_for('index') }}" class="menu_btn">Vender</a>
-            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Gestión de envíos</a>
-            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Ventas</a>
+            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Gestión de Cadeteria</a>
+            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Explorar ventas</a>
             <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
-            <a href="{{ url_for('index') }}" class="menu_btn">Retiro</a>
-            <a href="{{ url_for('index') }}" class="menu_btn">Venta en Vivo</a>
+            <a href="{{ url_for('proximamente_view') }}" class="menu_btn">Retiro</a>
+            <a href="{{ url_for('proximamente_view') }}"" class="menu_btn">Correo</a>
+            <a href="{{ url_for('proximamente_view') }}" class="menu_btn">Venta en Vivo</a>
         </nav>
     </aside>
 
@@ -99,10 +100,13 @@
                         <!-- Monto -->
                         <div class="form-group horizontal-group">
                             <div class="left">
-                            <label>Monto:</label>
                             
+                            <label>Monto:</label>
+                            <div class="money-input">
+                            <span class="currency">$</span>
                             <input type="number" step="0.01" id="amount" required class="input-date">    
-                            </div> 
+                            </div>
+                        </div> 
                             <div class="right">
                             <label>Pago?</label>
                             <section  class="form-options">
@@ -133,23 +137,44 @@
                         <hr class="divider">
                         <!-- Flags -->
                         <div class="form-group">
-                            <label>Adicional:</label>
-                            <section  class="form-options">
-                            <label class="option"><input type="checkbox" id="hasShipping"> Con envío</label>
-                            <label class="option"><input type="checkbox" id="hasChange"> Cambio</label>
+                            <label>Tipo de envio:</label>
+                            <section class="form-options">
+                            
+                        <label class="option">
+                            
+                                    <input type="radio" name="deliveryType" value="cadeteria" id="deliveryCadeteria">
+                                    Cadetería
+                                </label>
+
+                                <label class="option">
+                                    <input type="radio" name="deliveryType" value="retiro">
+                                    Retiro
+                                </label>
+
+                                <label class="option">
+                                    <input type="radio" name="deliveryType" value="correo">
+                                    Correo
+                                </label>
                             </section>
                             </div>
                         <hr class="divider">
                         <!-- Fecha envío -->
-                        <div id="shippingDateContainer" class="form-group hidden">
+                         
+                        <div id="shippingDateContainer" >
                             <label>Fecha de envío:</label>
                             <input type="date" id="shippingDate" class="input-date" >
                         </div>
+                        
 
                         <!-- Notas -->
                         <div class="form-group">
-                            <label>Aclaración</label>
+                            <label>Aclaraciónes</label>
+                            <section class="form-options">
                             <input type="text" class="input-text" id="notes" placeholder="Informacion para el cadete">
+                            <label class="option">
+                                
+                            <input type="checkbox" id="hasChange">Es un cambio</label>
+                            </section>
                         </div>
 
                         <!-- Acciones -->

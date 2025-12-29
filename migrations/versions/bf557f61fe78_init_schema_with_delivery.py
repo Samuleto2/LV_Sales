@@ -1,8 +1,8 @@
-"""initial tables
+"""init schema with delivery
 
-Revision ID: d67ff1815bf5
+Revision ID: bf557f61fe78
 Revises: 
-Create Date: 2025-12-23 18:48:52.989016
+Create Date: 2025-12-29 17:24:58.828982
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'd67ff1815bf5'
+revision = 'bf557f61fe78'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -38,6 +38,13 @@ def upgrade():
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('sale_date', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('has_shipping', sa.Boolean(), nullable=True),
+    sa.Column('shipping_date', sa.Date(), nullable=True),
+    sa.Column('sales_channel', sa.String(length=20), nullable=False),
+    sa.Column('is_cash', sa.Boolean(), nullable=False),
+    sa.Column('has_change', sa.Boolean(), nullable=False),
+    sa.Column('delivery_type', sa.String(length=20), nullable=False),
+    sa.Column('completed_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

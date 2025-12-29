@@ -28,7 +28,9 @@ def sales_to_dict(sale):
         ),
         "sales_channel": sale.sales_channel,
         "is_cash": sale.is_cash,
-        "has_change": sale.has_change
+        "has_change": sale.has_change,
+        "delivery_type": sale.delivery_type,
+        "completed_at": sale.completed_at
     }
 
 def sales_to_list(sales):

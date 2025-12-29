@@ -19,5 +19,8 @@ class Sale(db.Model):
     sales_channel = db.Column(db.String(20), nullable=False)
     is_cash = db.Column(db.Boolean, default=False, nullable=False)
     has_change = db.Column(db.Boolean, default=False, nullable=False)
+    delivery_type = db.Column(db.String(20), nullable=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    
 
     customer = db.relationship("Customer", back_populates="sales")

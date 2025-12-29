@@ -21,11 +21,12 @@
 
         <nav class="menu">
             <a href="{{ url_for('index') }}" class="menu_btn">Vender</a>
-            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Gestión de envíos</a>
-            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Ventas</a>
+            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Gestión de Cadeteria</a>
+            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Explorar ventas</a>
             <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
-            <a href="{{ url_for('index') }}" class="menu_btn">Retiro</a>
-            <a href="{{ url_for('index') }}" class="menu_btn">Venta en Vivo</a>
+            <a href="{{ url_for('proximamente_view') }}" class="menu_btn">Retiro</a>
+            <a href="{{ url_for('proximamente_view') }}"" class="menu_btn">Correo</a>
+            <a href="{{ url_for('proximamente_view') }}" class="menu_btn">Venta en Vivo</a>
         </nav>
     </aside>
 
@@ -47,8 +48,56 @@
                         <label>Buscar cliente</label>
                         <input type="text" id="customerSearch" placeholder="Nombre o apellido" class="input-text">
                     </div>
+                    <div class="section-header">
+                        
+                        <button type="button" id="btnNewCustomer" class="btn">Nuevo cliente</button>
+                    </div>
                 </section>
+                <!-- FORM CLIENTE -->
+                <section class="form-panel hidden" id="customerFormDiv">
+                    <h3 id="customerFormTitle">Crear cliente</h3><br>
 
+                    <form id="customerForm">
+                        <!-- todo el contenido igual que ahora -->
+
+                        <input type="hidden" id="customerFormId">
+
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input type="text" class="input-text" id="cf_first_name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Apellido</label>
+                            <input type="text" class="input-text" id="cf_last_name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Dirección</label>
+                            <input type="text" class="input-text" id="cf_address" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Localidad</label>
+                            <input type="text" class="input-text" id="cf_city" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="text" class="input-text" id="cf_phone" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Descripción</label>
+                            <textarea id="cf_description" class="input-text"></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="button-edit">Guardar</button>
+                            <button type="button" class="button-delete" id="customerFormCancel">Cancelar</button>
+                        </div>
+                    </form>
+                </section>
                 <!-- TABLA -->
                 <div class="table-wrapper">
                     <table id="customersTable">
@@ -87,7 +136,7 @@
     <div class="modal-content">
         <h2 id="modalTitle">Editar Cliente</h2>
 
-        <form id="customerForm">
+        <form id="editCustomerForm">
             <input type="hidden" id="customerId">
 
             <div class="form-group">
