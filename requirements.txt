@@ -1,0 +1,9 @@
+flask
+flask-cors
+flask-migrate
+flask-sqlalchemy
+reportlab
+requests
+gunicorn
+psycopg[binary]
+psycopg2-binary>=2.9

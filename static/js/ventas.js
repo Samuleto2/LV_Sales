@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-    const apiUrl = "http://127.0.0.1:5000/sales";
+    const apiUrl = "/sales";
     const customerSearchUrl = "/customers/search";
 
     const customerInput = document.querySelector("#customer_name");
@@ -547,7 +547,7 @@ window.editSale = async function(id) {
         };
 
         let method = id ? "PUT" : "POST";
-        let url = "http://127.0.0.1:5000/customers" + (id ? `/${id}` : "");
+        let url = "/customers" + (id ? `/${id}` : "");
 
         const res = await fetch(url, {
             method,
