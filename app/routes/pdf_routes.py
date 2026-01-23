@@ -8,10 +8,13 @@ from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
 from app.models.sale import Sale
 from app.models.customer import Customer
+from flask_login import login_required
 
 pdf_bp = Blueprint("pdf", __name__, url_prefix="/pdf")
 
+
 @pdf_bp.get("/sale/<int:sale_id>/label")
+@login_required
 def download_sale_label(sale_id):
     # Traer la venta
     sale = Sale.query.get(sale_id)
@@ -142,6 +145,7 @@ def download_sale_label(sale_id):
 
 
 @pdf_bp.get("/shipments/day/<shipping_date>/labels")
+@login_required
 def download_labels_by_day(shipping_date):
     try:
         ship_date = date.fromisoformat(shipping_date)

@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request, render_template
+from flask_login import login_required
 from app.serializers.customer_serializer import(
     customer_to_dict,
     customers_to_list
@@ -16,17 +17,18 @@ from app.services.customers_services import (
 customers_bp = Blueprint("customers", __name__, url_prefix="/customers")
 
 @customers_bp.get("/manage")
+@login_required
 def manage_customers_view():
     return render_template("clientes.html")
 
-# GET /customers
 @customers_bp.get("")
+@login_required
 def get_customers():
     customers = get_all_customers()
     return jsonify(customers_to_list(customers)), 200
 
-# GET /customers/<id>
 @customers_bp.get("/<int:id>")
+@login_required
 def get_customer(id):
     customer = get_customer_by_id(id)
     if not customer:
@@ -34,6 +36,7 @@ def get_customer(id):
     return jsonify(customer_to_dict(customer)), 200
 
 @customers_bp.post("")
+@login_required
 def create_new_customer():
     data = request.get_json()
     if not data:
@@ -48,8 +51,8 @@ def create_new_customer():
         "customer": customer_to_dict(customer)
     }), 201
 
-# PUT /customers/<id>
 @customers_bp.put("/<int:id>")
+@login_required
 def update_existing_customer(id):
     customer = get_customer_by_id(id)
     if not customer:
@@ -58,8 +61,8 @@ def update_existing_customer(id):
     update_customer(customer, data)
     return jsonify({"message": "Cliente actualizado"}), 200
 
-# DELETE /customers/<id>
 @customers_bp.delete("/<int:id>")
+@login_required
 def delete_existing_customer(id):
     customer = get_customer_by_id(id)
     if not customer:
@@ -70,8 +73,8 @@ def delete_existing_customer(id):
         return jsonify({"error": "No se puede eliminar cliente con ventas asociadas"}), 400
     return jsonify({"message": "Cliente eliminado"}), 200
 
-# GET /customers/search?q=...
 @customers_bp.get("/search")
+@login_required
 def search():
     query = request.args.get("q", "").strip()
     if not query:
@@ -80,10 +83,8 @@ def search():
     result = [customer_to_dict(c) for c in customers]
     return jsonify(result), 200
 
-
-
-# GET /customers/paginated?page=1&per_page=10&q=nombre
 @customers_bp.get("/paginated")
+@login_required
 def get_customers_paginated():
     try:
         page = int(request.args.get("page", 1))
@@ -93,10 +94,8 @@ def get_customers_paginated():
 
     query = request.args.get("q", "").strip()
     
-    # Llamás al service, que se encarga de la DB
     pagination = get_customers_paginated_service(page=page, per_page=per_page, query=query)
     
-    # Solo serializar los resultados
     customers_list = [customer_to_dict(c) for c in pagination.items]
 
     return jsonify({

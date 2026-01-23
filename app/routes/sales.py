@@ -1,6 +1,7 @@
 # routes/sales.py
 from flask import Blueprint, jsonify, request, render_template, redirect, url_for
 from app.models.sale import Sale 
+from flask_login import login_required
 from app.services.sales_services import(
     last_sales_service, create_sale, update_sale, delete_sale, 
     get_sale_by_id, filter_sales, mark_sale_paid, explore_sales, 
@@ -15,6 +16,7 @@ from app.serializers.sales_serializer import(
 sales_bp = Blueprint("sales", __name__, url_prefix="/sales")
 
 @sales_bp.get("/shipments")
+
 def shipments_view():
     return render_template("shipments.html")
 
@@ -22,6 +24,7 @@ def shipments_view():
 
 # GET /sales → listado de últimas ventas
 @sales_bp.get("")
+@login_required
 def list_sales():
 
     query = Sale.query
@@ -43,6 +46,7 @@ def list_sales():
 
 # GET /sales/<id> → traer venta por ID
 @sales_bp.get("/<int:id>")
+@login_required
 def get_sale(id):
     sale = get_sale_by_id(id)
     if not sale:
@@ -51,6 +55,7 @@ def get_sale(id):
 
 # POST /sales → crear nueva venta
 @sales_bp.post("")
+@login_required
 def create_new_sale():
     data = request.get_json(silent=True)
 
@@ -72,6 +77,7 @@ def create_new_sale():
 
 # PUT /sales/<id> → actualizar venta
 @sales_bp.put("/<int:id>")
+@login_required
 def update_existing_sale(id):
     sale = get_sale_by_id(id)
     if not sale:
@@ -87,6 +93,7 @@ def update_existing_sale(id):
 
 # DELETE /sales/<id> → eliminar venta
 @sales_bp.delete("/<int:id>")
+@login_required
 def delete_existing_sale(id):
     sale = get_sale_by_id(id)
     if not sale:
@@ -97,6 +104,7 @@ def delete_existing_sale(id):
 
 
 @sales_bp.get("/explore")
+@login_required
 def explore_sales_page():
     filters = {
         "customer": request.args.get("customer", ""),
@@ -120,6 +128,7 @@ def explore_sales_page():
 
 # Endpoint para marcar venta como pagada
 @sales_bp.post("/<int:sale_id>/mark_paid")
+@login_required
 def mark_sale_paid_endpoint(sale_id):
     sale, message = mark_sale_paid(sale_id)
     if not sale:
@@ -127,6 +136,7 @@ def mark_sale_paid_endpoint(sale_id):
     return jsonify({"message": message}), 200
 
 @sales_bp.get("/last_sales")
+@login_required
 def get_last_sales():
     sales = last_sales_service(10)  # ahora llama al servicio
     return jsonify([
@@ -143,6 +153,7 @@ def get_last_sales():
     ])
 
 @sales_bp.route("/turn", methods=["GET"])
+@login_required
 def sales_by_turn():
     """
     Endpoint: /sales/turn?start=YYYY-MM-DDTHH:MM&end=YYYY-MM-DDTHH:MM
@@ -169,17 +180,20 @@ def sales_by_turn():
     return jsonify(sales_list)
 
 @sales_bp.get("/shipments/calendar")
+@login_required
 def shipments_calendar():
     data = get_shipping_calendar()
     return jsonify(data), 200
 
 
 @sales_bp.get("/shipments/day/<shipping_date>")
+@login_required
 def shipments_by_day(shipping_date):
     sales = get_shipments_by_day(shipping_date)
     return jsonify([sales_to_dict(s) for s in sales]), 200
 
 @sales_bp.put("/shipments/<int:sale_id>")
+@login_required
 def update_shipment_endpoint(sale_id):
     sale = Sale.query.get_or_404(sale_id)
     data = request.json
