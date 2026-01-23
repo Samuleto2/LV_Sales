@@ -1,0 +1,139 @@
+/* =========================
+   GESTIÓN DE ENTREGAS
+========================= */
+
+/* Sección de alerta */
+.section-alert {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.alert-header {
+    color: #856404;
+}
+
+/* Badge de vencidos */
+.overdue-badge {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+/* Tabla de entregas */
+.delivery-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.delivery-table th,
+.delivery-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+}
+
+.delivery-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+/* Filas */
+.delivery-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.delivery-table tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+.delivery-table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+/* Fila vencida */
+.row-overdue {
+    background-color: #fff3cd !important;
+    border-left: 4px solid #ffc107;
+}
+
+.row-overdue:hover {
+    background-color: #ffe69c !important;
+}
+
+/* Columna de días */
+.days-ok {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.days-overdue {
+    color: #dc3545;
+    font-weight: 700;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Botones de acción */
+.btn-deliver,
+.btn-ship {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-deliver:hover,
+.btn-ship:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-deliver:active,
+.btn-ship:active {
+    transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .delivery-table {
+        font-size: 12px;
+    }
+    
+    .delivery-table th,
+    .delivery-table td {
+        padding: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .delivery-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}

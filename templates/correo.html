@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Correo - Lunita Val</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/delivery.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+</head>
+
+<body>
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <a href="{{ url_for('index') }}" class="logo-link">
+                <img src="{{ url_for('static', filename='images/logoinvert.png') }}"
+                     alt="Logo Lunita Val"
+                     class="logo">
+            </a>
+        </div>
+
+        <nav class="menu">
+            <a href="{{ url_for('index') }}" class="menu_btn">Vender</a>
+            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Gestión de Cadetería</a>
+            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Explorar ventas</a>
+            <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
+            <a href="{{ url_for('delivery.retiro_view') }}" class="menu_btn">Retiro</a>
+            <a href="{{ url_for('delivery.correo_view') }}" class="menu_btn active">Correo</a>
+            <a href="{{ url_for('proximamente_view') }}" class="menu_btn">Venta en Vivo</a>
+        </nav>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+
+        <!-- HEADER -->
+        <header class="header">
+            <h1 class="view-title">Gestión de Correo</h1>
+
+            <div class="dashboard">
+                <div><strong>Pendientes:</strong> <span id="totalPending">0</span></div>
+                <div class="overdue-badge"><strong>Demorados (+10 días):</strong> <span id="totalOverdue">0</span></div>
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="content">
+            <div class="content-column">
+
+                <!-- PEDIDOS DEMORADOS -->
+                <section class="section-alert" id="overdueSection" style="display: none;">
+                    <div class="section-header alert-header">
+                        <h2>⚠️ Pedidos Demorados (más de 10 días sin enviar)</h2>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="delivery-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cliente</th>
+                                    <th>Dirección</th>
+                                    <th>Ciudad</th>
+                                    <th>Monto</th>
+                                    <th>Días</th>
+                                    <th>Fecha Venta</th>
+                                    <th>Notas</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overdueTable"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PEDIDOS PENDIENTES -->
+                <section class="form-panel">
+                    <div class="section-header">
+                        <h2>📮 Pedidos Pendientes de Envío</h2>
+                        <button onclick="loadCorreos()" class="btn"> Actualizar</button>
+                    </div>
+                    <br>
+                    <div class="table-wrapper">
+                        <table class="delivery-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cliente</th>
+                                    <th>Dirección</th>
+                                    <th>Ciudad</th>
+                                    <th>Monto</th>
+                                    <th>Días</th>
+                                    <th>Fecha Venta</th>
+                                    <th>Notas</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingTable"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/correo.js') }}"></script>
+</body>
+</html>

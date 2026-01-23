@@ -30,7 +30,25 @@ def sales_to_dict(sale):
         "is_cash": sale.is_cash,
         "has_change": sale.has_change,
         "delivery_type": sale.delivery_type,
-        "completed_at": sale.completed_at
+        "completed_at": sale.completed_at,
+        
+        # 🔹 NUEVO: Campos de entrega
+        "delivered_at": (
+            sale.delivered_at.isoformat()
+            if sale.delivered_at else None
+        ),
+        "shipped_at": (
+            sale.shipped_at.isoformat()
+            if sale.shipped_at else None
+        ),
+        "is_delivered": sale.is_delivered,
+        "days_since_creation": sale.days_since_creation,
+        "is_overdue": sale.is_overdue,
+        
+        # Info del customer (para evitar queries adicionales)
+        "customer_phone": customer.phone if customer else None
+
+        
     }
 
 def sales_to_list(sales):
