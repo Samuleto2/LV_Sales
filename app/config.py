@@ -17,6 +17,12 @@ class Config:
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,   # valida conexión antes de usarla
+        "pool_recycle": 300,     # recicla conexiones viejas
+    }
+
+
     CORS_RESOURCES = {r"/*": {"origins": "*"}}
     
     # Configuración de sesión

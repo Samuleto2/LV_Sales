@@ -4,7 +4,6 @@ from flask_login import login_required
 from app.config import Config
 from app.extensions import db, migrate, cors, login_manager
 
-
 def create_app():
     
 
