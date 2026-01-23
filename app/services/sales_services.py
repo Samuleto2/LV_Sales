@@ -214,36 +214,6 @@ def get_sales_by_turn(start_time: datetime, end_time: datetime):
     )
 
 
-def get_shipments_calendar(from_date: date, to_date: date):
-    sales = (
-        Sale.query
-        .filter(
-            Sale.has_shipping.is_(True),
-            Sale.shipping_date.between(from_date, to_date)
-        )
-        .order_by(Sale.shipping_date.asc())
-        .all()
-    )
-
-    result = {}
-
-    for s in sales:
-        key = s.shipping_date.isoformat()
-        result.setdefault(key, {"count": 0, "sales": []})
-
-        result[key]["count"] += 1
-        result[key]["sales"].append({
-            "id": s.id,
-            "customer": f"{s.customer.first_name} {s.customer.last_name}",
-            "address": s.customer.address,
-            "city": s.customer.city,
-            "notes": s.notes,
-            "label_url": f"/sales/{s.id}/label"
-        })
-
-    return result
-
-
 def update_shipment(sale, data):
     if not sale:
         return False
@@ -258,15 +228,24 @@ def update_shipment(sale, data):
     return True
 
 
-def get_shipping_calendar(days=15):
-    today = date.today()
-    end_date = today + timedelta(days=days)
+def get_shipping_calendar(days=15, from_date=None, to_date=None):
+    """
+    Obtiene calendario de envíos.
+    Si from_date y to_date están definidos, los usa.
+    Si no, calcula desde hoy hasta 'days' días adelante.
+    """
+    if from_date and to_date:
+        start = from_date
+        end = to_date
+    else:
+        start = date.today()
+        end = start + timedelta(days=days)
 
     rows = (
         db.session.query(Sale.shipping_date, func.count(Sale.id))
         .filter(
             Sale.has_shipping.is_(True),
-            Sale.shipping_date.between(today, end_date)
+            Sale.shipping_date.between(start, end)
         )
         .group_by(Sale.shipping_date)
         .all()
