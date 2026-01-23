@@ -1,9 +1,14 @@
 // ----------------------------
+// CONSTANTES
+// ----------------------------
+const STORAGE_KEY = 'turnSales';
+
+// ----------------------------
 // Autocompletado de cliente
 // ----------------------------
 const input = document.getElementById('customer-input');
 const suggestions = document.getElementById('customer-suggestions');
-const customerIdInput = document.getElementById('customer_id'); // input hidden
+const customerIdInput = document.getElementById('customer_id');
 let timeout = null;
 
 if (input) {
@@ -62,6 +67,44 @@ function showToast(message, type = "success") {
 }
 
 // ----------------------------
+// Función para actualizar venta en localStorage
+// ----------------------------
+function updateSaleInStorage(saleId, updatedData) {
+    let turnSales = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    
+    const index = turnSales.findIndex(s => s.id === saleId);
+    
+    if (index !== -1) {
+        // Actualizar venta existente
+        turnSales[index] = {
+            ...turnSales[index],
+            ...updatedData,
+            amount: Number(updatedData.amount) || turnSales[index].amount,
+            paid: !!updatedData.paid
+        };
+        
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(turnSales));
+        console.log(`✅ Venta #${saleId} actualizada en dashboard`);
+    } else {
+        console.log(`ℹ️ Venta #${saleId} no está en el dashboard del turno actual`);
+    }
+}
+
+// ----------------------------
+// Función para eliminar venta del localStorage
+// ----------------------------
+function removeSaleFromStorage(saleId) {
+    let turnSales = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    
+    const filtered = turnSales.filter(s => s.id !== saleId);
+    
+    if (filtered.length !== turnSales.length) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+        console.log(`✅ Venta #${saleId} eliminada del dashboard`);
+    }
+}
+
+// ----------------------------
 // Recargar tabla de ventas
 // ----------------------------
 async function loadSales(page = 1) {
@@ -89,10 +132,10 @@ async function loadSales(page = 1) {
 
     // Reasignar eventos
     document.querySelectorAll('.button-delete').forEach(btn => {
-        btn.addEventListener('click', () => deleteSale(btn.dataset.url));
+        btn.addEventListener('click', () => deleteSale(btn.dataset.url, btn));
     });
     document.querySelectorAll('.btn-pay').forEach(btn => {
-        btn.addEventListener('click', () => markSalePaid(btn.dataset.sale));
+        btn.addEventListener('click', () => markSalePaid(btn.dataset.sale, btn));
     });
 
     // Formatear montos
@@ -109,27 +152,49 @@ async function loadSales(page = 1) {
 // ----------------------------
 // Borrar venta
 // ----------------------------
-async function deleteSale(url) {
+async function deleteSale(url, btnElement) {
     if (!confirm("¿Eliminar venta?")) return;
+    
+    // Extraer ID de la URL
+    const saleId = parseInt(url.match(/\/(\d+)$/)[1]);
+    
     const res = await fetch(url, { method: "DELETE" });
     const result = await res.json();
     showToast(result.message || "Venta eliminada");
+    
+    // 🔹 ACTUALIZAR LOCALSTORAGE
+    removeSaleFromStorage(saleId);
+    
     loadSales();
 }
 
 // ----------------------------
 // Marcar venta como pagada
 // ----------------------------
-function markSalePaid(saleId) {
-    fetch(`/sales/${saleId}/mark_paid`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
-        .then(res => res.json())
-        .then(data => {
-            if (data.message) {
-                showToast(data.message);
-                loadSales();
-            }
-        })
-        .catch(err => console.error(err));
+async function markSalePaid(saleId, btnElement) {
+    const res = await fetch(`/sales/${saleId}/mark_paid`, { 
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'} 
+    });
+    
+    const data = await res.json();
+    
+    if (data.message) {
+        showToast(data.message);
+        
+        // 🔹 ACTUALIZAR LOCALSTORAGE
+        // Obtener el monto de la fila
+        const row = btnElement.closest('tr');
+        const amountCell = row.querySelector('.amount');
+        const amount = parseFloat(amountCell.dataset.amount);
+        
+        updateSaleInStorage(parseInt(saleId), {
+            paid: true,
+            amount: amount
+        });
+        
+        loadSales();
+    }
 }
 
 // ----------------------------

@@ -50,9 +50,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 // ----------------------------
-// Variables globales
+// Variables globales - AHORA CON PERSISTENCIA
 // ----------------------------
-let turnSales = [];  // ventas desde el último reset
+const STORAGE_KEY = 'turnSales';
+
+// Cargar ventas del localStorage al iniciar
+let turnSales = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
 // ----------------------------
 // Función para actualizar el dashboard
@@ -64,7 +67,7 @@ function updateDashboard(sales) {
     let totalImpago = 0;
 
     sales.forEach(sale => {
-        const amount = Number(sale.amount) || 0; // <-- asegurar número
+        const amount = Number(sale.amount) || 0;
         const paid = !!sale.paid;
 
         totalVendido += amount;
@@ -85,8 +88,54 @@ function updateDashboard(sales) {
 function addSaleToTurn(sale) {
     sale.amount = Number(sale.amount) || 0;
     sale.paid = !!sale.paid;
+    sale.id = sale.id || Date.now(); // Asegurar que tiene ID
 
     turnSales.push(sale);
+    
+    // 🔹 GUARDAR EN LOCALSTORAGE
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(turnSales));
+    
+    updateDashboard(turnSales);
+}
+
+// ----------------------------
+// Función para actualizar una venta existente en el turno
+// ----------------------------
+function updateSaleInTurn(saleId, updatedData) {
+    const index = turnSales.findIndex(s => s.id === saleId);
+    
+    if (index !== -1) {
+        // Actualizar la venta existente
+        turnSales[index] = {
+            ...turnSales[index],
+            ...updatedData,
+            amount: Number(updatedData.amount) || turnSales[index].amount,
+            paid: !!updatedData.paid
+        };
+    } else {
+        // Si no existe, agregarla
+        addSaleToTurn({
+            id: saleId,
+            amount: Number(updatedData.amount) || 0,
+            paid: !!updatedData.paid
+        });
+    }
+    
+    // 🔹 GUARDAR EN LOCALSTORAGE
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(turnSales));
+    
+    updateDashboard(turnSales);
+}
+
+// ----------------------------
+// Función para eliminar una venta del turno
+// ----------------------------
+function removeSaleFromTurn(saleId) {
+    turnSales = turnSales.filter(s => s.id !== saleId);
+    
+    // 🔹 GUARDAR EN LOCALSTORAGE
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(turnSales));
+    
     updateDashboard(turnSales);
 }
 
@@ -94,11 +143,19 @@ function addSaleToTurn(sale) {
 // Botón de reset
 // ----------------------------
 document.getElementById("resetTurnBtn").addEventListener("click", () => {
-    turnSales = [];
-    updateDashboard(turnSales);
+    if (confirm("¿Estás seguro de resetear el contador del turno?")) {
+        turnSales = [];
+        
+        // 🔹 LIMPIAR LOCALSTORAGE
+        localStorage.removeItem(STORAGE_KEY);
+        
+        updateDashboard(turnSales);
+        showToast("Contador reseteado");
+    }
 });
 
-
+// 🔹 ACTUALIZAR DASHBOARD AL CARGAR LA PÁGINA
+updateDashboard(turnSales);
 
     /** ----------------------------
      * Función para cargar ventas en tabla
@@ -124,14 +181,11 @@ document.getElementById("resetTurnBtn").addEventListener("click", () => {
                 </td>
             `;
             if (highlightId && s.id === highlightId) {
-                row.style.backgroundColor = "#d4edda"; // verde claro
+                row.style.backgroundColor = "#d4edda";
                 setTimeout(() => row.style.backgroundColor = "", 2000);
             }
             tbody.appendChild(row);
-
- 
         });
-
     }
 
     /** ----------------------------
@@ -202,9 +256,6 @@ document.getElementById("resetTurnBtn").addEventListener("click", () => {
         infoDiv.style.display = "block";
     }
 
-  /** ----------------------------
-     * Crear o editar venta
-     * ---------------------------- */
     const saleForm = document.querySelector("#saleForm");
     const hasShippingCheckbox = document.getElementById("hasShipping");
     const shippingDateContainer = document.getElementById("shippingDateContainer");
@@ -215,10 +266,6 @@ document.getElementById("resetTurnBtn").addEventListener("click", () => {
     const isCashRadio = document.getElementById("isCash");
     const deliveryRadios = document.querySelectorAll("input[name='deliveryType']");
 
-
-    /** ----------------------------
-     * Mostrar / ocultar fecha envío
-     * ---------------------------- */
     const updateShippingDateVisibility = () => {
         const deliveryType = document.querySelector(
             "input[name='deliveryType']:checked"
@@ -242,244 +289,213 @@ document.getElementById("resetTurnBtn").addEventListener("click", () => {
         radio.addEventListener("change", updateShippingDateVisibility)
     );
 
-    // estado inicial
     updateShippingDateVisibility();
-    /** ----------------------------
-     * Sincronizar restricciones entre Pago? y Método de pago
-     * ---------------------------- */
+
     function syncPaymentConstraints() {
         const paymentMethod = document.querySelector("input[name='PaidMethod']:checked")?.value;
         const paidValue = document.querySelector("input[name='paid']:checked")?.value === "true";
 
-        // Si el método es efectivo, Pago? siempre true
         if (paymentMethod === "cash") {
             paidRadios.forEach(radio => {
                 if (radio.value === "false") radio.disabled = true;
                 if (radio.value === "true") radio.checked = false;
             });
         } else {
-            
             paidRadios.forEach(radio => radio.disabled = false);
         }
 
-        // Si Pago? = true, deshabilitar efectivo
         if (paidValue) {
             if (isCashRadio) isCashRadio.disabled = true;
-            // Opcional: si estaba seleccionado efectivo, desmarcarlo
             if (paymentMethod === "cash" && isCashRadio) isCashRadio.checked = false;
         } else {
             if (isCashRadio) isCashRadio.disabled = false;
-            
         }
     }
 
-    // Listeners
     paymentRadios.forEach(radio => radio.addEventListener("change", syncPaymentConstraints));
     paidRadios.forEach(radio => radio.addEventListener("change", syncPaymentConstraints));
 
-    // Ejecutar al cargar para sincronizar estado inicial
     syncPaymentConstraints();
 
-    /** ----------------------------
-     * Submit del formulario
-     * ---------------------------- */
-   saleForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+    saleForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-    if (!selectedCustomer) {
-        return showToast("Seleccione un cliente válido", "error");
-    }
+        if (!selectedCustomer) {
+            return showToast("Seleccione un cliente válido", "error");
+        }
 
-    const salesChannel = document.querySelector(
-        "input[name='salesChannel']:checked"
-    )?.value;
+        const salesChannel = document.querySelector(
+            "input[name='salesChannel']:checked"
+        )?.value;
 
-    if (!salesChannel) {
-        return showToast("Seleccione un punto de venta", "error");
-    }
+        if (!salesChannel) {
+            return showToast("Seleccione un punto de venta", "error");
+        }
 
-    // 🔹 NUEVO: tipo de entrega
-    const deliveryType = document.querySelector(
-        "input[name='deliveryType']:checked"
-    )?.value;
+        const deliveryType = document.querySelector(
+            "input[name='deliveryType']:checked"
+        )?.value;
 
-    if (!deliveryType) {
-        return showToast("Seleccione tipo de entrega", "error");
-    }
+        if (!deliveryType) {
+            return showToast("Seleccione tipo de entrega", "error");
+        }
 
-    // 🔹 Solo cadetería requiere fecha
-    if (deliveryType === "cadeteria" && !shippingDateInput.value) {
-        return showToast("Seleccione fecha de envío", "error");
-    }
+        if (deliveryType === "cadeteria" && !shippingDateInput.value) {
+            return showToast("Seleccione fecha de envío", "error");
+        }
 
-    // Leer valores actuales
-    const paymentMethod = document.querySelector(
-        "input[name='PaidMethod']:checked"
-    )?.value;
+        const paymentMethod = document.querySelector(
+            "input[name='PaidMethod']:checked"
+        )?.value;
 
-    const paid =
-        document.querySelector("input[name='paid']:checked")?.value === "true";
+        const paid =
+            document.querySelector("input[name='paid']:checked")?.value === "true";
 
-    const data = {
-        customer_id: selectedCustomer.id,
-        amount: parseFloat(document.querySelector("#amount").value),
-        payment_method: paymentMethod || null,
-        paid,
-        notes: document.querySelector("#notes").value,
+        const data = {
+            customer_id: selectedCustomer.id,
+            amount: parseFloat(document.querySelector("#amount").value),
+            payment_method: paymentMethod || null,
+            paid,
+            notes: document.querySelector("#notes").value,
 
-        delivery_type: deliveryType,
-        has_shipping: deliveryType === "cadeteria",
-        shipping_date:
-            deliveryType === "cadeteria" ? shippingDateInput.value : null,
+            delivery_type: deliveryType,
+            has_shipping: deliveryType === "cadeteria",
+            shipping_date:
+                deliveryType === "cadeteria" ? shippingDateInput.value : null,
 
-        sales_channel: salesChannel,
-        is_cash: paymentMethod === "cash",
-        has_change: hasChangeCheckbox.checked
-    };
+            sales_channel: salesChannel,
+            is_cash: paymentMethod === "cash",
+            has_change: hasChangeCheckbox.checked
+        };
 
-    const method = editingSaleId ? "PUT" : "POST";
-    const url = apiUrl + (editingSaleId ? `/${editingSaleId}` : "");
+        const method = editingSaleId ? "PUT" : "POST";
+        const url = apiUrl + (editingSaleId ? `/${editingSaleId}` : "");
 
-    const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        const res = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+
+        showToast(result.message || "Operación completada");
+
+        // 🔹 ACTUALIZAR DASHBOARD
+        if (editingSaleId) {
+            // Si es edición, actualizar venta existente
+            updateSaleInTurn(editingSaleId, {
+                amount: data.amount,
+                paid: data.paid
+            });
+        } else {
+            // Si es nueva, agregarla con el ID del servidor
+            addSaleToTurn({
+                id: result.sale_id,
+                amount: data.amount,
+                paid: data.paid
+            });
+        }
+
+        resetSaleForm();
+        loadSales(editingSaleId || result.sale_id);
     });
 
-    const result = await res.json();
-
-    showToast(result.message || "Operación completada");
-
-    // Actualizar UI
-    const newSale = {
-        amount: parseFloat(document.querySelector("#amount").value) || 0,
-        paid
-    };
-
-    addSaleToTurn(newSale);
-    resetSaleForm();
-    loadSales(editingSaleId);
-});
-
-
-
-    // cachear ultimo punto de venta // 
     const channelRadios = document.querySelectorAll("input[name='salesChannel']");
 
-// Al cargar la página
-const lastChannel = localStorage.getItem("lastSalesChannel");
-if (lastChannel) {
-    const radio = document.querySelector(
-        `input[name='salesChannel'][value='${lastChannel}']`
-    );
-    if (radio) radio.checked = true;
-}
+    const lastChannel = localStorage.getItem("lastSalesChannel");
+    if (lastChannel) {
+        const radio = document.querySelector(
+            `input[name='salesChannel'][value='${lastChannel}']`
+        );
+        if (radio) radio.checked = true;
+    }
 
-// Al cambiar
-channelRadios.forEach(radio => {
-    radio.addEventListener("change", () => {
-        localStorage.setItem("lastSalesChannel", radio.value);
-    });
-});
-
-
-// EDITAR VENTA // 
-
-window.editSale = async function(id) {
-    const res = await fetch(`${apiUrl}/${id}`);
-    const sale = await res.json();
-
-    editingSaleId = id;
-    selectedCustomer = { 
-        id: sale.customer_id, 
-        first_name: sale.customer_first_name, 
-        last_name: sale.customer_last_name, 
-        address: sale.customer_address, 
-        city: sale.customer_city 
-    };
-
-    // Marcar el radio del canal de venta
-    const channelRadios = document.querySelectorAll("input[name='salesChannel']");
     channelRadios.forEach(radio => {
-        radio.checked = radio.value === sale.sales_channel;
+        radio.addEventListener("change", () => {
+            localStorage.setItem("lastSalesChannel", radio.value);
+        });
     });
 
-    customerInput.value = `${selectedCustomer.first_name} ${selectedCustomer.last_name}`;
-    document.querySelector("#customer_id").value = sale.customer_id;
+    window.editSale = async function(id) {
+        const res = await fetch(`${apiUrl}/${id}`);
+        const sale = await res.json();
 
-    document.querySelector("#amount").value = sale.amount;
-    document.querySelector("#notes").value = sale.notes || "";
+        editingSaleId = id;
+        selectedCustomer = { 
+            id: sale.customer_id, 
+            first_name: sale.customer_first_name, 
+            last_name: sale.customer_last_name, 
+            address: sale.customer_address, 
+            city: sale.customer_city 
+        };
 
-    // Marcar los radios de pago
-    const paidRadios = document.querySelectorAll("input[name='paid']");
-    paidRadios.forEach(radio => {
-        radio.checked = (radio.value === (sale.paid ? "true" : "false"));
-    });
+        const channelRadios = document.querySelectorAll("input[name='salesChannel']");
+        channelRadios.forEach(radio => {
+            radio.checked = radio.value === sale.sales_channel;
+        });
 
-    const paymentRadios = document.querySelectorAll("input[name='PaidMethod']");
-    paymentRadios.forEach(radio => {
-        radio.checked = (radio.value === sale.payment_method);
-    });
+        customerInput.value = `${selectedCustomer.first_name} ${selectedCustomer.last_name}`;
+        document.querySelector("#customer_id").value = sale.customer_id;
 
-    // Checkboxes
-    const isCashRadio = document.getElementById("isCash");
-    const hasChangeCheckbox = document.getElementById("hasChange");
-    if (isCashRadio) isCashRadio.checked = sale.is_cash || false;
-    if (hasChangeCheckbox) hasChangeCheckbox.checked = sale.has_change || false;
+        document.querySelector("#amount").value = sale.amount;
+        document.querySelector("#notes").value = sale.notes || "";
 
-    // Shipping
-    const hasShippingCheckbox = document.getElementById("hasShipping");
-    const shippingDateContainer = document.getElementById("shippingDateContainer");
-    const shippingDateInput = document.getElementById("shippingDate");
-    if (hasShippingCheckbox) {
-        hasShippingCheckbox.checked = sale.has_shipping || false;
-        shippingDateContainer.style.display = hasShippingCheckbox.checked ? "block" : "none";
-        if (shippingDateInput) shippingDateInput.value = sale.shipping_date || "";
-    }
+        const paidRadios = document.querySelectorAll("input[name='paid']");
+        paidRadios.forEach(radio => {
+            radio.checked = (radio.value === (sale.paid ? "true" : "false"));
+        });
 
-    // Scroll suave al top
-    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+        const paymentRadios = document.querySelectorAll("input[name='PaidMethod']");
+        paymentRadios.forEach(radio => {
+            radio.checked = (radio.value === sale.payment_method);
+        });
 
-    // Sincronizar restricciones Pago? vs Método
-    syncPaymentConstraints();
+        const isCashRadio = document.getElementById("isCash");
+        const hasChangeCheckbox = document.getElementById("hasChange");
+        if (isCashRadio) isCashRadio.checked = sale.is_cash || false;
+        if (hasChangeCheckbox) hasChangeCheckbox.checked = sale.has_change || false;
 
-    // Actualizar info del cliente
-    const infoDiv = document.querySelector("#customer_info");
-    document.querySelector("#info_name").textContent = `${selectedCustomer.first_name} ${selectedCustomer.last_name}`;
-    document.querySelector("#info_address").textContent = selectedCustomer.address;
-    document.querySelector("#info_city").textContent = selectedCustomer.city;
-    infoDiv.style.display = "block";
+        const hasShippingCheckbox = document.getElementById("hasShipping");
+        const shippingDateContainer = document.getElementById("shippingDateContainer");
+        const shippingDateInput = document.getElementById("shippingDate");
+        if (hasShippingCheckbox) {
+            hasShippingCheckbox.checked = sale.has_shipping || false;
+            shippingDateContainer.style.display = hasShippingCheckbox.checked ? "block" : "none";
+            if (shippingDateInput) shippingDateInput.value = sale.shipping_date || "";
+        }
 
-    // Botón submit
-    const submitBtn = saleForm.querySelector("button[type=submit]");
-    submitBtn.textContent = "Guardar cambios";
-    submitBtn.style.backgroundColor = "green";
-    submitBtn.style.color = "white";
+        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
 
-    // Botón cancelar
-    if (!saleForm.querySelector(".cancel-btn")) {
-        const cancelBtn = document.createElement("button");
-        cancelBtn.type = "button";
-        cancelBtn.textContent = "Cancelar";
-        cancelBtn.className = "button button-delete cancel-btn";
-        cancelBtn.addEventListener("click", resetSaleForm);
-        submitBtn.insertAdjacentElement("afterend", cancelBtn);
-    }
+        syncPaymentConstraints();
 
-    // Título del formulario
-    const headerH2 = document.querySelector("#headerForm h2");
-    if (headerH2) headerH2.textContent = `Editar venta #${id}`;
+        const infoDiv = document.querySelector("#customer_info");
+        document.querySelector("#info_name").textContent = `${selectedCustomer.first_name} ${selectedCustomer.last_name}`;
+        document.querySelector("#info_address").textContent = selectedCustomer.address;
+        document.querySelector("#info_city").textContent = selectedCustomer.city;
+        infoDiv.style.display = "block";
 
-    // Mostrar contenedor
-    const formContainer = document.getElementById("saleFormContainer");
-    formContainer.style.display = "block";
-};
+        const submitBtn = saleForm.querySelector("button[type=submit]");
+        submitBtn.textContent = "Guardar cambios";
+        submitBtn.style.backgroundColor = "green";
+        submitBtn.style.color = "white";
 
+        if (!saleForm.querySelector(".cancel-btn")) {
+            const cancelBtn = document.createElement("button");
+            cancelBtn.type = "button";
+            cancelBtn.textContent = "Cancelar";
+            cancelBtn.className = "button button-delete cancel-btn";
+            cancelBtn.addEventListener("click", resetSaleForm);
+            submitBtn.insertAdjacentElement("afterend", cancelBtn);
+        }
 
+        const headerH2 = document.querySelector("#headerForm h2");
+        if (headerH2) headerH2.textContent = `Editar venta #${id}`;
 
-    /** ----------------------------
-     * Reset formulario
-     * ---------------------------- */
+        const formContainer = document.getElementById("saleFormContainer");
+        formContainer.style.display = "block";
+    };
+
     function resetSaleForm() {
         saleForm.reset();
         editingSaleId = null;
@@ -500,25 +516,20 @@ window.editSale = async function(id) {
         customerInput.focus();
     }
 
-    /** ----------------------------
-     * Borrar venta
-     * ---------------------------- */
     window.deleteSale = async function(id) {
         if (!confirm("¿Eliminar venta " + id + "?")) return;
         const res = await fetch(`${apiUrl}/${id}`, { method: "DELETE" });
         const result = await res.json();
         showToast(result.message || "Venta eliminada");
+        
+        // 🔹 REMOVER DEL DASHBOARD
+        removeSaleFromTurn(id);
+        
         loadSales();
     }
 
-    /** ----------------------------
-     * Inicializar
-     * ---------------------------- */
     loadSales();
 
-    /** ----------------------------
-     * Funciones de cliente (nuevo cliente)
-     * ---------------------------- */
     const btnNewCustomer = document.querySelector("#btnNewCustomer");
     const customerFormDiv = document.querySelector("#customerFormDiv");
     const customerForm = document.querySelector("#customerForm");
@@ -562,20 +573,14 @@ window.editSale = async function(id) {
             result = { error: "Respuesta no válida del servidor" };
         }
 
-        // Validar status
         if (!res.ok) {
-            // Mostrar error del servidor
             alert(result.error || "Ocurrió un error");
         } else {
-            
             showToast(result.message || "Cliente creado correctamente");
             customerFormDiv.style.display = "none";
         }
     });
 
-    /** ----------------------------
-     * Descargar PDF
-     * ---------------------------- */
     window.downloadPDF = async function(saleId) {
         try {
             const response = await fetch(`/pdf/sale/${saleId}/label`);
@@ -596,7 +601,6 @@ window.editSale = async function(id) {
     }
 
 });
-
 
 
 
