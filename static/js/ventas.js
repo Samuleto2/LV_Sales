@@ -418,83 +418,105 @@ updateDashboard(turnSales);
     });
 
     window.editSale = async function(id) {
-        const res = await fetch(`${apiUrl}/${id}`);
-        const sale = await res.json();
+    const res = await fetch(`${apiUrl}/${id}`);
+    const sale = await res.json();
 
-        editingSaleId = id;
-        selectedCustomer = { 
-            id: sale.customer_id, 
-            first_name: sale.customer_first_name, 
-            last_name: sale.customer_last_name, 
-            address: sale.customer_address, 
-            city: sale.customer_city 
-        };
+    console.log("📝 Editando venta:", sale); // Debug
 
-        const channelRadios = document.querySelectorAll("input[name='salesChannel']");
-        channelRadios.forEach(radio => {
-            radio.checked = radio.value === sale.sales_channel;
-        });
-
-        customerInput.value = `${selectedCustomer.first_name} ${selectedCustomer.last_name}`;
-        document.querySelector("#customer_id").value = sale.customer_id;
-
-        document.querySelector("#amount").value = sale.amount;
-        document.querySelector("#notes").value = sale.notes || "";
-
-        const paidRadios = document.querySelectorAll("input[name='paid']");
-        paidRadios.forEach(radio => {
-            radio.checked = (radio.value === (sale.paid ? "true" : "false"));
-        });
-
-        const paymentRadios = document.querySelectorAll("input[name='PaidMethod']");
-        paymentRadios.forEach(radio => {
-            radio.checked = (radio.value === sale.payment_method);
-        });
-
-        const isCashRadio = document.getElementById("isCash");
-        const hasChangeCheckbox = document.getElementById("hasChange");
-        if (isCashRadio) isCashRadio.checked = sale.is_cash || false;
-        if (hasChangeCheckbox) hasChangeCheckbox.checked = sale.has_change || false;
-
-        const hasShippingCheckbox = document.getElementById("hasShipping");
-        const shippingDateContainer = document.getElementById("shippingDateContainer");
-        const shippingDateInput = document.getElementById("shippingDate");
-        if (hasShippingCheckbox) {
-            hasShippingCheckbox.checked = sale.has_shipping || false;
-            shippingDateContainer.style.display = hasShippingCheckbox.checked ? "block" : "none";
-            if (shippingDateInput) shippingDateInput.value = sale.shipping_date || "";
-        }
-
-        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-
-        syncPaymentConstraints();
-
-        const infoDiv = document.querySelector("#customer_info");
-        document.querySelector("#info_name").textContent = `${selectedCustomer.first_name} ${selectedCustomer.last_name}`;
-        document.querySelector("#info_address").textContent = selectedCustomer.address;
-        document.querySelector("#info_city").textContent = selectedCustomer.city;
-        infoDiv.style.display = "block";
-
-        const submitBtn = saleForm.querySelector("button[type=submit]");
-        submitBtn.textContent = "Guardar cambios";
-        submitBtn.style.backgroundColor = "green";
-        submitBtn.style.color = "white";
-
-        if (!saleForm.querySelector(".cancel-btn")) {
-            const cancelBtn = document.createElement("button");
-            cancelBtn.type = "button";
-            cancelBtn.textContent = "Cancelar";
-            cancelBtn.className = "button button-delete cancel-btn";
-            cancelBtn.addEventListener("click", resetSaleForm);
-            submitBtn.insertAdjacentElement("afterend", cancelBtn);
-        }
-
-        const headerH2 = document.querySelector("#headerForm h2");
-        if (headerH2) headerH2.textContent = `Editar venta #${id}`;
-
-        const formContainer = document.getElementById("saleFormContainer");
-        formContainer.style.display = "block";
+    editingSaleId = id;
+    selectedCustomer = { 
+        id: sale.customer_id, 
+        first_name: sale.customer_first_name, 
+        last_name: sale.customer_last_name, 
+        address: sale.customer_address, 
+        city: sale.customer_city 
     };
+
+    // 1️⃣ PUNTO DE VENTA
+    const channelRadios = document.querySelectorAll("input[name='salesChannel']");
+    channelRadios.forEach(radio => {
+        radio.checked = radio.value === sale.sales_channel;
+    });
+
+    // 2️⃣ CLIENTE
+    customerInput.value = `${selectedCustomer.first_name} ${selectedCustomer.last_name}`;
+    document.querySelector("#customer_id").value = sale.customer_id;
+
+    // 3️⃣ MONTO
+    document.querySelector("#amount").value = sale.amount;
+
+    // 4️⃣ NOTAS / ACLARACIONES
+    document.querySelector("#notes").value = sale.notes || "";
+
+    // 5️⃣ PAGO (SI/NO)
+    const paidRadios = document.querySelectorAll("input[name='paid']");
+    paidRadios.forEach(radio => {
+        radio.checked = (radio.value === (sale.paid ? "true" : "false"));
+    });
+
+    // 6️⃣ MÉTODO DE PAGO
+    const paymentRadios = document.querySelectorAll("input[name='PaidMethod']");
+    paymentRadios.forEach(radio => {
+        radio.checked = (radio.value === sale.payment_method);
+    });
+
+    // 7️⃣ TIPO DE ENTREGA (retiro/cadeteria/correo)
+    const deliveryRadios = document.querySelectorAll("input[name='deliveryType']");
+    deliveryRadios.forEach(radio => {
+        radio.checked = (radio.value === sale.delivery_type);
+    });
+    
+    // 🔹 Actualizar visibilidad de fecha de envío
+    updateShippingDateVisibility();
+
+    // 8️⃣ FECHA DE ENVÍO (si aplica)
+    const shippingDateInput = document.getElementById("shippingDate");
+    if (sale.has_shipping && sale.shipping_date && shippingDateInput) {
+        shippingDateInput.value = sale.shipping_date;
+    } else if (shippingDateInput) {
+        shippingDateInput.value = "";
+    }
+
+    // 9️⃣ CHECKBOX: ES UN CAMBIO
+    const hasChangeCheckbox = document.getElementById("hasChange");
+    if (hasChangeCheckbox) {
+        hasChangeCheckbox.checked = sale.has_change || false;
+    }
+
+    // 🔟 SCROLL AL TOP
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+
+    // Sincronizar restricciones Pago? vs Método
+    syncPaymentConstraints();
+
+    // Mostrar info del cliente
+    const infoDiv = document.querySelector("#customer_info");
+    document.querySelector("#info_name").textContent = `${selectedCustomer.first_name} ${selectedCustomer.last_name}`;
+    document.querySelector("#info_address").textContent = selectedCustomer.address;
+    document.querySelector("#info_city").textContent = selectedCustomer.city;
+    infoDiv.style.display = "block";
+
+    // Cambiar botón submit
+    const submitBtn = saleForm.querySelector("button[type=submit]");
+    submitBtn.textContent = "Guardar cambios";
+    submitBtn.style.backgroundColor = "green";
+    submitBtn.style.color = "white";
+
+    // Agregar botón cancelar
+    if (!saleForm.querySelector(".cancel-btn")) {
+        const cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.textContent = "Cancelar";
+        cancelBtn.className = "button button-delete cancel-btn";
+        cancelBtn.addEventListener("click", resetSaleForm);
+        submitBtn.insertAdjacentElement("afterend", cancelBtn);
+    }
+
+    // Cambiar título
+    const formContainer = document.getElementById("saleFormPanel");
+    const headerH2 = formContainer.querySelector("h2");
+    if (headerH2) headerH2.textContent = `Editar venta #${id}`;
+};  
 
     function resetSaleForm() {
         saleForm.reset();

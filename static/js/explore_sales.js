@@ -1,14 +1,9 @@
 // ----------------------------
-// CONSTANTES
-// ----------------------------
-const STORAGE_KEY = 'turnSales';
-
-// ----------------------------
 // Autocompletado de cliente
 // ----------------------------
 const input = document.getElementById('customer-input');
 const suggestions = document.getElementById('customer-suggestions');
-const customerIdInput = document.getElementById('customer_id');
+const customerIdInput = document.getElementById('customer_id'); // input hidden
 let timeout = null;
 
 if (input) {
@@ -26,7 +21,7 @@ if (input) {
                 .then(res => res.json())
                 .then(data => {
                     suggestions.innerHTML = '';
-                    data.slice(0,5).forEach(c => {
+                    data.slice(0, 5).forEach(c => {
                         const div = document.createElement('div');
                         div.classList.add('suggestion-item');
                         div.textContent = `${c.first_name} ${c.last_name} (${c.city})`;
@@ -67,134 +62,134 @@ function showToast(message, type = "success") {
 }
 
 // ----------------------------
-// Función para actualizar venta en localStorage
+// Variables de paginación
 // ----------------------------
-function updateSaleInStorage(saleId, updatedData) {
-    let turnSales = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    
-    const index = turnSales.findIndex(s => s.id === saleId);
-    
-    if (index !== -1) {
-        // Actualizar venta existente
-        turnSales[index] = {
-            ...turnSales[index],
-            ...updatedData,
-            amount: Number(updatedData.amount) || turnSales[index].amount,
-            paid: !!updatedData.paid
-        };
-        
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(turnSales));
-        console.log(`✅ Venta #${saleId} actualizada en dashboard`);
-    } else {
-        console.log(`ℹ️ Venta #${saleId} no está en el dashboard del turno actual`);
-    }
-}
-
-// ----------------------------
-// Función para eliminar venta del localStorage
-// ----------------------------
-function removeSaleFromStorage(saleId) {
-    let turnSales = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    
-    const filtered = turnSales.filter(s => s.id !== saleId);
-    
-    if (filtered.length !== turnSales.length) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-        console.log(`✅ Venta #${saleId} eliminada del dashboard`);
-    }
-}
+let currentPage = 1;
+let totalPages = 1;
 
 // ----------------------------
 // Recargar tabla de ventas
 // ----------------------------
 async function loadSales(page = 1) {
     const params = new URLSearchParams();
-    const customer = input.value;
+    const customerId = customerIdInput.value;
     const payment_method = document.querySelector('input[name="payment_method"]').value;
     const paid = document.querySelector('select[name="paid"]').value;
     const date_from = document.querySelector('input[name="date_from"]').value;
     const date_to = document.querySelector('input[name="date_to"]').value;
 
-    if (customer) params.append('customer', customer);
+    if (customerId) params.append('customer_id', customerId);
     if (payment_method) params.append('payment_method', payment_method);
     if (paid) params.append('paid', paid);
     if (date_from) params.append('date_from', date_from);
     if (date_to) params.append('date_to', date_to);
     params.append('page', page);
 
-    const res = await fetch(`/sales/explore?${params.toString()}`);
-    const html = await res.text();
+    try {
+        const res = await fetch(`/sales/explore/json?${params.toString()}`);
+        const data = await res.json();
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const newTbody = doc.querySelector('#salesTable tbody');
-    document.querySelector("#salesTable tbody").innerHTML = newTbody.innerHTML;
+        const tbody = document.querySelector("#salesTable tbody");
+        tbody.innerHTML = '';
 
-    // Reasignar eventos
-    document.querySelectorAll('.button-delete').forEach(btn => {
-        btn.addEventListener('click', () => deleteSale(btn.dataset.url, btn));
-    });
-    document.querySelectorAll('.btn-pay').forEach(btn => {
-        btn.addEventListener('click', () => markSalePaid(btn.dataset.sale, btn));
-    });
+        if (!data.sales.length) {
+            tbody.innerHTML = "<tr><td colspan='8'>Sin resultados</td></tr>";
+            return;
+        }
 
-    // Formatear montos
-    document.querySelectorAll('.amount').forEach(td => {
-        const amount = parseFloat(td.dataset.amount);
-        td.textContent = amount.toLocaleString('es-AR', {
-            style: 'currency',
-            currency: 'ARS',
-            minimumFractionDigits: 0
+        data.sales.forEach(s => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${s.customer_name}</td>
+                <td>${s.sale_date}</td>
+                <td class="amount" data-amount="${s.amount}">${s.amount}</td>
+                <td>${s.payment_method}</td>
+                <td>${s.paid ? 'Sí' : 'No'}</td>
+                <td>${s.delivery_type || ''}</td>
+                <td><button class="btn btn-pay" data-sale="${s.id}" ${s.paid ? 'disabled' : ''}>Pagar</button></td>
+                <td><button class="button-delete" data-url="/sales/${s.id}">Eliminar</button></td>
+            `;
+            tbody.appendChild(tr);
         });
-    });
+
+        // Formatear montos
+        document.querySelectorAll('.amount').forEach(td => {
+            const amount = parseFloat(td.dataset.amount);
+            td.textContent = amount.toLocaleString('es-AR', {
+                style: 'currency',
+                currency: 'ARS',
+                minimumFractionDigits: 0
+            });
+        });
+
+        // Reasignar eventos
+        document.querySelectorAll('.button-delete').forEach(btn => {
+            btn.addEventListener('click', () => deleteSale(btn.dataset.url));
+        });
+        document.querySelectorAll('.btn-pay').forEach(btn => {
+            btn.addEventListener('click', () => markSalePaid(btn.dataset.sale));
+        });
+
+        // Actualizar paginación
+        currentPage = data.page;
+        totalPages = data.total_pages;
+        renderPagination();
+    } catch (err) {
+        console.error(err);
+        showToast("Error cargando ventas", "error");
+    }
+}
+
+// ----------------------------
+// Renderizar paginación
+// ----------------------------
+function renderPagination() {
+    const paginationDiv = document.getElementById('pagination');
+    if (!paginationDiv) return;
+
+    paginationDiv.innerHTML = '';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = 'Anterior';
+    prevBtn.disabled = currentPage <= 1;
+    prevBtn.addEventListener('click', () => loadSales(currentPage - 1));
+    paginationDiv.appendChild(prevBtn);
+
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = 'Siguiente';
+    nextBtn.disabled = currentPage >= totalPages;
+    nextBtn.addEventListener('click', () => loadSales(currentPage + 1));
+    paginationDiv.appendChild(nextBtn);
+
+    const info = document.createElement('span');
+    info.textContent = ` Página ${currentPage} de ${totalPages} `;
+    paginationDiv.appendChild(info);
 }
 
 // ----------------------------
 // Borrar venta
 // ----------------------------
-async function deleteSale(url, btnElement) {
+async function deleteSale(url) {
     if (!confirm("¿Eliminar venta?")) return;
-    
-    // Extraer ID de la URL
-    const saleId = parseInt(url.match(/\/(\d+)$/)[1]);
-    
     const res = await fetch(url, { method: "DELETE" });
     const result = await res.json();
     showToast(result.message || "Venta eliminada");
-    
-    // 🔹 ACTUALIZAR LOCALSTORAGE
-    removeSaleFromStorage(saleId);
-    
-    loadSales();
+    loadSales(currentPage);
 }
 
 // ----------------------------
 // Marcar venta como pagada
 // ----------------------------
-async function markSalePaid(saleId, btnElement) {
-    const res = await fetch(`/sales/${saleId}/mark_paid`, { 
-        method: 'POST', 
-        headers: {'Content-Type': 'application/json'} 
-    });
-    
-    const data = await res.json();
-    
-    if (data.message) {
-        showToast(data.message);
-        
-        // 🔹 ACTUALIZAR LOCALSTORAGE
-        // Obtener el monto de la fila
-        const row = btnElement.closest('tr');
-        const amountCell = row.querySelector('.amount');
-        const amount = parseFloat(amountCell.dataset.amount);
-        
-        updateSaleInStorage(parseInt(saleId), {
-            paid: true,
-            amount: amount
-        });
-        
-        loadSales();
-    }
+function markSalePaid(saleId) {
+    fetch(`/sales/${saleId}/mark_paid`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
+        .then(res => res.json())
+        .then(data => {
+            if (data.message) {
+                showToast(data.message);
+                loadSales(currentPage);
+            }
+        })
+        .catch(err => console.error(err));
 }
 
 // ----------------------------

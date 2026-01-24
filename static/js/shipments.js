@@ -219,6 +219,24 @@ document.addEventListener("dragend", e => {
     }
 });
 
+    window.downloadPDF = async function(saleId) {
+        try {
+            const response = await fetch(`/pdf/sale/${saleId}/label`);
+            if (!response.ok) throw new Error("No se pudo generar el comprobante");
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `venta_${saleId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error(error);
+            showToast("Error al descargar el comprobante", "error");
+        }
+    }
 
 
 

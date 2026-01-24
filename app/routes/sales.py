@@ -22,6 +22,9 @@ def shipments_view():
 
 # ---------- Helpers ----------
 
+
+
+
 # GET /sales → listado de últimas ventas
 @sales_bp.get("")
 @login_required
@@ -125,7 +128,6 @@ def explore_sales_page():
         total_pages=data["total_pages"],
         filters=filters
     )
-
 # Endpoint para marcar venta como pagada
 @sales_bp.post("/<int:sale_id>/mark_paid")
 @login_required
@@ -200,3 +202,5 @@ def update_shipment_endpoint(sale_id):
 
     update_shipment(sale, data)
     return jsonify({"ok": True})
+
+
