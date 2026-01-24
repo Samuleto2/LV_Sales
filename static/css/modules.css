@@ -1,0 +1,358 @@
+/* =========================
+   MÓDULOS ESPECÍFICOS
+   Importado después de base.css
+========================= */
+
+/* =========================
+   CALENDARIO (Cadetería)
+========================= */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.calendar-day {
+    position: relative;
+    border: 1px solid #ccc;
+    padding: 12px;
+    cursor: pointer;
+    background: #fafafa;
+    min-height: 100px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.calendar-day:hover {
+    background: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.calendar-day.active {
+    border: 2px solid #2196f3;
+    background: #e3f2fd;
+    box-shadow: 0 4px 8px rgba(33, 150, 243, 0.2);
+}
+
+.calendar-day.drag-hover {
+    background: #fff9c4;
+    border: 2px dashed #ffc107;
+}
+
+/* Colores por cantidad de envíos */
+.day-green {
+    background-color: #e8f5e9;
+}
+
+.day-yellow {
+    background-color: #fff8e1;
+}
+
+.day-red {
+    background-color: #ffebee;
+}
+
+.badge {
+    display: inline-block;
+    margin-top: 5px;
+    padding: 4px 8px;
+    background: #2196f3;
+    color: white;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.today-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: #2563eb;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 11px;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+}
+
+/* =========================
+   TARJETAS DE ENVÍO
+========================= */
+.shipment-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.shipment-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.shipment-card:active {
+    cursor: grabbing;
+    opacity: 0.9;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.shipment-card.dragging {
+    opacity: 0.5;
+}
+
+.shipment-card .view-mode,
+.shipment-card .edit-mode {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.shipment-card .edit-mode textarea {
+    width: 100%;
+    min-height: 60px;
+    margin-top: 8px;
+}
+
+.shipment-card .edit-mode input[type="date"] {
+    margin-bottom: 8px;
+}
+
+/* =========================
+   GESTIÓN DE ENTREGAS
+========================= */
+.section-alert {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.alert-header {
+    color: #856404;
+}
+
+.delivery-table {
+    width: 100%;
+}
+
+/* Fila vencida/demorada */
+.row-overdue {
+    background-color: #fff3cd !important;
+    border-left: 4px solid #ffc107;
+}
+
+.row-overdue:hover {
+    background-color: #ffe69c !important;
+}
+
+/* Indicadores de días */
+.days-ok {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.days-overdue {
+    color: #dc3545;
+    font-weight: 700;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Botones específicos de entrega */
+.btn-deliver,
+.btn-ship {
+    background: linear-gradient(135deg, #28a745, #218838);
+    padding: 8px 16px;
+    white-space: nowrap;
+}
+
+.btn-deliver:hover,
+.btn-ship:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+}
+
+/* =========================
+   FILTROS
+========================= */
+.filters {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.filters .form-group {
+    min-width: 160px;
+    margin-bottom: 0;
+}
+
+.filters label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #555;
+}
+
+.filters input,
+.filters select {
+    height: 36px;
+    padding: 6px 10px;
+}
+
+.filters .form-options {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.filters .form-actions {
+    margin-top: 0;
+}
+
+.filters .btn {
+    height: 36px;
+    padding: 0 16px;
+}
+
+/* =========================
+   GRUPOS HORIZONTALES
+========================= */
+.form-group.horizontal-group {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.form-group.horizontal-group .left,
+.form-group.horizontal-group .right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group.horizontal-group label {
+    margin: 0;
+}
+
+.form-group.horizontal-group .form-options {
+    margin: 0;
+}
+
+/* =========================
+   WRAPPERS DE FORMULARIOS
+========================= */
+.forms-wrapper {
+    display: flex;
+    width: 100%;
+    gap: 20px;
+    transition: all 0.3s ease;
+}
+
+.forms-wrapper.one-form {
+    justify-content: center;
+    
+}
+
+.forms-wrapper.one-form .form-panel {
+    max-width: 600px;
+    width: 100%;
+    
+}
+
+.forms-wrapper.two-forms {
+    justify-content: space-between;
+}
+
+.forms-wrapper.two-forms .form-panel {
+    flex: 1;
+    max-width: 48%;
+}
+
+
+
+
+
+/* =========================
+   PROXIMAMENTE
+========================= */
+.container-proximamente {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    padding: 40px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+}
+
+.container-proximamente h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.container-proximamente p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    color: #666;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 1200px) {
+    .calendar-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filters .form-group {
+        min-width: unset;
+        width: 100%;
+    }
+
+    .filters .form-options {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filters .btn {
+        width: 100%;
+    }
+
+    .calendar-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .forms-wrapper.two-forms {
+        flex-direction: column;
+    }
+
+    .forms-wrapper.two-forms .form-panel {
+        max-width: 100%;
+    }
+
+    .form-group.horizontal-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
