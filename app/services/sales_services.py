@@ -1,10 +1,24 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
+from zoneinfo import ZoneInfo
 
 from app.models.sale import Sale
 from app.models.customer import Customer
 from app.extensions import db
+
+
+# Definir zona horaria de Argentina
+TIMEZONE = ZoneInfo("America/Argentina/Buenos_Aires")
+
+
+def now_ar():
+    """Retorna datetime actual en zona horaria de Argentina"""
+    return datetime.now(TIMEZONE)
+
+def today_ar():
+    """Retorna date de hoy en Argentina"""
+    return now_ar().date()
 
 
 # =========================
@@ -50,7 +64,7 @@ def parse_sale_data(data, is_update=False):
 
         shipping_date = date.fromisoformat(data["shipping_date"])
 
-        if shipping_date < date.today():
+        if shipping_date < today_ar():
             raise ValueError("La fecha de envío no puede ser pasada")
 
     is_cash = bool(data.get("is_cash", False))
@@ -83,8 +97,8 @@ def create_sale(data):
 
     sale = Sale(
         **parsed,
-        sale_date=date.today(),
-        created_at=datetime.utcnow()
+        sale_date=today_ar(),
+        created_at=now_ar()
     )
 
     db.session.add(sale)
@@ -238,7 +252,7 @@ def get_shipping_calendar(days=15, from_date=None, to_date=None):
         start = from_date
         end = to_date
     else:
-        start = date.today()
+        start = today_ar()
         end = start + timedelta(days=days)
 
     rows = (

@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, date
 from io import BytesIO
-from flask import Blueprint, send_file, current_app, jsonify
+from flask import Blueprint, send_file, current_app, jsonify, request
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
@@ -138,8 +138,18 @@ def draw_cadeteria_label(c, sale, customer, width, height, images):
     c.setFont("Helvetica-Bold", 14)
     total_formatted = f"{sale.amount:,.0f}".replace(",", ".")
     c.drawCentredString(width/2, y, f"Total: ${total_formatted}")
-    y -= 15*mm
-
+    y -= 10*mm
+    
+    # 🔹 NUEVO: Indicador de pago
+    if not sale.paid:
+        c.setFillColor(HexColor('#B91C1C'))
+        c.setFont("Helvetica-Bold", 12)
+        c.drawCentredString(width/2, y, "⚠️ PENDIENTE DE PAGO")
+        c.setFillColor(HexColor('#000000'))
+        y -= 8*mm
+    else:
+        y -= 5*mm
+    
     # Recuadro de notas
     notes_height = 25*mm
     c.setStrokeColorRGB(0, 0, 0)
@@ -207,7 +217,8 @@ def draw_retiro_label(c, sale, customer, width, height, images):
     c.setFont("Helvetica-Bold", 24)
     total_formatted = f"{sale.amount:,.0f}".replace(",", ".")
     c.drawCentredString(width/2, y, f"$ {total_formatted}")
-    y -= 15*mm
+    y -= 10*mm
+    
     
     # Fecha de venta
     c.setFont("Helvetica", 10)
@@ -224,6 +235,12 @@ def draw_retiro_label(c, sale, customer, width, height, images):
     c.drawCentredString(width/2, y, "⚠️ Válido 15 días desde la fecha de venta")
     c.setFillColor(HexColor('#000000'))
     y -= 15*mm
+
+    if not sale.paid:
+        c.setFillColor(HexColor('#B91C1C'))
+        c.setFont("Helvetica-Bold", 12)
+        c.drawCentredString(width/2, y, "⚠️ PENDIENTE DE PAGO")
+        c.setFillColor(HexColor('#000000'))
     
     # Notas si existen
     if sale.notes:
@@ -248,70 +265,82 @@ def draw_correo_label(c, sale, customer, width, height, images):
     c.setFont("Helvetica-Bold", 32)
     c.drawCentredString(width/2, height - 25*mm, "CORREO")
     
-        # Número de venta en blanco
     c.setFont("Helvetica-Bold", 14)
     c.drawCentredString(width/2, height - 32*mm, f"Venta #{sale.id}000")
     
-    c.setFillColor(HexColor('#000000'))  # Volver a negro
+    c.setFillColor(HexColor('#000000'))
     
-    # Logo pequeño
+    # Logo
     try:
         if os.path.exists(images['logo']):
             logo = ImageReader(images['logo'])
             c.drawImage(
                 logo,
-                (width - 35*mm)/2,
-                height - 68*mm,
-                width=35*mm,
-                height=35*mm,
+                5*mm,
+                height - 60*mm,
+                width=25*mm,
+                height=25*mm,
                 preserveAspectRatio=True,
                 mask='auto'
             )
     except:
         pass
     
-    # Info del cliente
-    y = height - 75*mm
+    # Dirección de envío (grande)
+    y = height - 70*mm
+    
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(5*mm, y, "ENVIAR A:")
+    y -= 8*mm
     
     c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(
-        width/2, 
-        y, 
-        f"{customer.first_name} {customer.last_name}"
-    )
-    y -= 10*mm
+    c.drawString(5*mm, y, f"{customer.first_name} {customer.last_name}")
+    y -= 8*mm
     
     c.setFont("Helvetica", 12)
-    c.drawCentredString(width/2, y, f"Tel: {customer.phone}")
-    y -= 15*mm
+    c.drawString(5*mm, y, f"{customer.address}")
+    y -= 6*mm
     
-    # Total muy grande
-    c.setFont("Helvetica-Bold", 24)
+    c.drawString(5*mm, y, f"{customer.city}")
+    y -= 6*mm
+    
+    c.drawString(5*mm, y, f"Tel: {customer.phone}")
+    y -= 12*mm
+    
+    # Total
+    c.setFont("Helvetica-Bold", 18)
     total_formatted = f"{sale.amount:,.0f}".replace(",", ".")
-    c.drawCentredString(width/2, y, f"$ {total_formatted}")
-    y -= 15*mm
+    c.drawString(5*mm, y, f"Total: $ {total_formatted}")
+    y -= 8*mm
     
-    # Fecha de venta
+    # 🔹 Indicador de pago
+    if not sale.paid:
+        c.setFillColor(HexColor('#B91C1C'))
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(5*mm, y, "⚠️ PENDIENTE DE PAGO")
+        c.setFillColor(HexColor('#000000'))
+        y -= 8*mm
+    
+    # Fecha
     c.setFont("Helvetica", 10)
-    c.drawCentredString(
-        width/2, 
-        y, 
-        f"Fecha: {sale.created_at.strftime('%d/%m/%Y')}"
-    )
-    y -= 10*mm
+    c.drawString(5*mm, y, f"Fecha: {sale.created_at.strftime('%d/%m/%Y')}")
+    y -= 12*mm
     
+    # Recuadro de descripción del paquete
+    c.setStrokeColorRGB(0, 0, 0)
+    c.setLineWidth(1)
+    c.rect(5*mm, y - 20*mm, width - 10*mm, 20*mm, stroke=1, fill=0)
     
-    # Notas si existen
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(7*mm, y - 4*mm, "Descripción / Notas:")
+    
     if sale.notes:
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(5*mm, y, "Notas:")
-        y -= 5*mm
-        
-        c.setFont("Helvetica", 9)
+        c.setFont("Helvetica", 8)
+        text_y = y - 8*mm
         lines = sale.notes.split('\n')
-        for line in lines[:3]:  # Máximo 3 líneas
-            c.drawString(5*mm, y, line[:80])
-            y -= 4*mm
+        for line in lines[:2]:
+            c.drawString(7*mm, text_y, line[:70])
+            text_y -= 4*mm
 
 
 @pdf_bp.get("/sale/<int:sale_id>/label")
@@ -366,6 +395,7 @@ def download_labels_by_day(shipping_date):
     sales = (
         Sale.query
         .filter(
+            Sale.delivery_type == 'cadeteria',  # 🔹 SOLO CADETERÍA
             Sale.has_shipping.is_(True),
             Sale.shipping_date == ship_date
         )
@@ -397,5 +427,62 @@ def download_labels_by_day(shipping_date):
         buffer,
         as_attachment=True,
         download_name=f"etiquetas_{shipping_date}.pdf",
+        mimetype="application/pdf"
+    )
+
+
+@pdf_bp.get("/batch-labels")
+def download_batch_labels():
+    """Genera PDF con múltiples etiquetas seleccionadas"""
+    ids_param = request.args.get('ids', '')
+    
+    if not ids_param:
+        return jsonify({"error": "No se proporcionaron IDs"}), 400
+    
+    try:
+        sale_ids = [int(id_str) for id_str in ids_param.split(',')]
+    except ValueError:
+        return jsonify({"error": "IDs inválidos"}), 400
+    
+    if len(sale_ids) > 100:
+        return jsonify({"error": "Máximo 100 etiquetas por lote"}), 400
+    
+    # Obtener ventas
+    sales = Sale.query.filter(Sale.id.in_(sale_ids)).order_by(Sale.id.asc()).all()
+    
+    if not sales:
+        return jsonify({"error": "No se encontraron ventas"}), 404
+    
+    # Generar PDF
+    buffer = BytesIO()
+    width, height = 100 * mm, 150 * mm
+    c = canvas.Canvas(buffer, pagesize=(width, height))
+    
+    images = get_image_paths()
+    
+    for sale in sales:
+        customer = Customer.query.get(sale.customer_id)
+        if not customer:
+            continue
+        
+        # Usar diseño según tipo
+        if sale.delivery_type == 'cadeteria':
+            draw_cadeteria_label(c, sale, customer, width, height, images)
+        elif sale.delivery_type == 'retiro':
+            draw_retiro_label(c, sale, customer, width, height, images)
+        elif sale.delivery_type == 'correo':
+            draw_correo_label(c, sale, customer, width, height, images)
+        else:
+            draw_cadeteria_label(c, sale, customer, width, height, images)
+        
+        c.showPage()
+    
+    c.save()
+    buffer.seek(0)
+    
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"etiquetas_lote_{len(sales)}.pdf",
         mimetype="application/pdf"
     )

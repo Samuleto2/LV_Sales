@@ -23,11 +23,12 @@
 
         <nav class="menu">
             <a href="{{ url_for('index') }}" class="menu_btn">Vender</a>
-            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Gestión de Cadeteria</a>
-            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Explorar ventas</a>
-            <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
+            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Cadetería</a>
             <a href="{{ url_for('delivery.retiro_view') }}" class="menu_btn">Retiro</a>
             <a href="{{ url_for('delivery.correo_view') }}" class="menu_btn">Correo</a>
+            <a href="{{ url_for('explore_sales') }}" class="menu_btn active">Explorar ventas</a>
+            <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
+            <a href="{{ url_for('sales.print_labels_view') }}" class="menu_btn">Imprimir Etiquetas</a>
             <a href="{{ url_for('proximamente_view') }}" class="menu_btn">Venta en Vivo</a>
         </nav>
     </aside>
@@ -50,7 +51,7 @@
 
                 <!-- FILTROS -->
                 <section class="form-panel">
-                    <form class="filters" method="get">
+                    <form class="filters" method="get" id="filterForm">
 
                         <div class="form-group autocomplete-wrapper">
                             <label>Cliente</label>
@@ -105,8 +106,9 @@
                                 <th>Fecha</th>
                                 <th>Cliente</th>
                                 <th>Monto</th>
-                                <th>Método de pago</th>
+                                <th>Método</th>
                                 <th>Pagado</th>
+                                <th>Tipo</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -119,23 +121,32 @@
                                 <td>{{ s.payment_method }}</td>
                                 <td class="paid-status">{{ "Si" if s.paid else "No" }}</td>
                                 <td>
+                                    {% if s.delivery_type == 'cadeteria' %}📦 Cadetería
+                                    {% elif s.delivery_type == 'retiro' %}🏪 Retiro
+                                    {% elif s.delivery_type == 'correo' %}📮 Correo
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('index') }}?edit={{ s.id }}" class="button-edit">
+                                        Editar
+                                    </a>
+
                                     <a href="{{ url_for('pdf.download_sale_label', sale_id=s.id) }}"
                                        target="_blank"
                                        class="btn">
-                                        Comprobante
+                                        Etiqueta
                                     </a>
 
                                     <button
                                         class="button button-delete"
-                                        data-url="{{ url_for('sales.delete_existing_sale', id=s.id) }}">
+                                        onclick="deleteSale({{ s.id }})">
                                         Borrar
                                     </button>
 
                                     {% if not s.paid %}
                                     <button
                                         class="btn-pay"
-                                        data-sale="{{ s.id }}"
-                                        data-url="{{ url_for('sales.mark_sale_paid_endpoint', sale_id=s.id) }}">
+                                        onclick="markSalePaid({{ s.id }})">
                                         Marcar pago
                                     </button>
                                     {% endif %}
@@ -149,40 +160,23 @@
                 <!-- PAGINACIÓN -->
                 <div class="pagination">
                     {% if page > 1 %}
-                        <a href="{{ url_for('sales.explore_sales_page', page=page-1,
-                            customer=filters.customer,
-                            payment_method=filters.payment_method,
-                            paid=filters.paid,
-                            date_from=filters.date_from,
-                            date_to=filters.date_to) }}">
+                        <button class="page-btn" onclick="goToPage({{ page - 1 }})">
                             « Anterior
-                        </a>
+                        </button>
+                    {% else %}
+                        <button class="page-btn" disabled>« Anterior</button>
                     {% endif %}
 
-                    {% for p in range(1, total_pages + 1) %}
-                        {% if p == page %}
-                            <strong>{{ p }}</strong>
-                        {% else %}
-                            <a href="{{ url_for('sales.explore_sales_page', page=p,
-                                customer=filters.customer,
-                                payment_method=filters.payment_method,
-                                paid=filters.paid,
-                                date_from=filters.date_from,
-                                date_to=filters.date_to) }}">
-                                {{ p }}
-                            </a>
-                        {% endif %}
-                    {% endfor %}
+                    <span style="margin: 0 10px;">
+                        Página {{ page }} de {{ total_pages }}
+                    </span>
 
                     {% if page < total_pages %}
-                        <a href="{{ url_for('sales.explore_sales_page', page=page+1,
-                            customer=filters.customer,
-                            payment_method=filters.payment_method,
-                            paid=filters.paid,
-                            date_from=filters.date_from,
-                            date_to=filters.date_to) }}">
+                        <button class="page-btn" onclick="goToPage({{ page + 1 }})">
                             Siguiente »
-                        </a>
+                        </button>
+                    {% else %}
+                        <button class="page-btn" disabled>Siguiente »</button>
                     {% endif %}
                 </div>
 
@@ -191,6 +185,86 @@
 
     </div>
 </div>
+
+<script>
+// Función para ir a página manteniendo filtros
+function goToPage(pageNum) {
+    const form = document.getElementById('filterForm');
+    const formData = new FormData(form);
+    
+    const params = new URLSearchParams();
+    for (let [key, value] of formData.entries()) {
+        if (value) params.append(key, value);
+    }
+    params.set('page', pageNum);
+    
+    window.location.href = '{{ url_for("sales.explore_sales_page") }}?' + params.toString();
+}
+
+// Toast
+function showToast(message, type = "success") {
+    const toast = document.createElement("div");
+    toast.textContent = message;
+    toast.style.position = "fixed";
+    toast.style.top = "20px";
+    toast.style.right = "20px";
+    toast.style.padding = "10px 20px";
+    toast.style.borderRadius = "5px";
+    toast.style.backgroundColor = type === "success" ? "#4caf50" : "#f44336";
+    toast.style.color = "white";
+    toast.style.zIndex = 9999;
+    toast.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Formatear montos
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.amount').forEach(td => {
+        const amount = parseFloat(td.dataset.amount);
+        td.textContent = amount.toLocaleString('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 0
+        });
+    });
+});
+
+// Borrar venta
+async function deleteSale(saleId) {
+    if (!confirm(`¿Eliminar venta #${saleId}?`)) return;
+    
+    try {
+        const res = await fetch(`/sales/${saleId}`, { method: "DELETE" });
+        const result = await res.json();
+        showToast(result.message || "Venta eliminada");
+        location.reload();
+    } catch (error) {
+        showToast("Error al eliminar venta", "error");
+    }
+}
+
+// Marcar como pagado
+async function markSalePaid(saleId) {
+    try {
+        const res = await fetch(`/sales/${saleId}/mark_paid`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'} 
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            showToast(data.message);
+            location.reload();
+        } else {
+            showToast(data.error || 'Error al marcar como pagado', 'error');
+        }
+    } catch (error) {
+        showToast('Error al procesar solicitud', 'error');
+    }
+}
+</script>
 
 <script src="{{ url_for('static', filename='js/explore_sales.js') }}"></script>
 </body>

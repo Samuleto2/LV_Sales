@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Imprimir Etiquetas - Lunita Val</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modules.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+</head>
+
+<body>
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <a href="{{ url_for('index') }}" class="logo-link">
+                <img src="{{ url_for('static', filename='images/logoinvert.png') }}"
+                     alt="Logo Lunita Val"
+                     class="logo">
+            </a>
+        </div>
+
+        <nav class="menu">
+            <a href="{{ url_for('index') }}" class="menu_btn">Vender</a>
+            <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Cadetería</a>
+            <a href="{{ url_for('delivery.retiro_view') }}" class="menu_btn">Retiro</a>
+            <a href="{{ url_for('delivery.correo_view') }}" class="menu_btn">Correo</a>
+            <a href="{{ url_for('explore_sales') }}" class="menu_btn">Explorar ventas</a>
+            <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
+            <a href="{{ url_for('sales.print_labels_view') }}" class="menu_btn active">Imprimir Etiquetas</a>
+            <a href="{{ url_for('proximamente_view') }}" class="menu_btn">Venta en Vivo</a>
+        </nav>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+
+        <!-- HEADER -->
+        <header class="header">
+            <h1 class="view-title">Imprimir Etiquetas</h1>
+
+            <div class="dashboard">
+                <span id="selectedCount">0 seleccionadas</span>
+                <button id="printSelectedBtn" class="btn" disabled>
+                    📥 Descargar PDF Seleccionadas
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="content">
+            <div class="content-column">
+
+                <!-- CONTROLES -->
+                <section class="form-panel">
+                    <div class="section-header">
+                        <h3>Selecciona las ventas para imprimir etiquetas</h3>
+                        <div>
+                            <button onclick="selectAll()" class="btn">Seleccionar todas</button>
+                            <button onclick="deselectAll()" class="btn">Deseleccionar todas</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TABLA -->
+                <div class="table-wrapper">
+                    <table id="salesTable">
+                        <thead>
+                            <tr>
+                                <th width="50">
+                                    <input type="checkbox" id="checkAll" onchange="toggleAll(this)">
+                                </th>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Pagado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for s in sales %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" 
+                                           class="sale-checkbox" 
+                                           value="{{ s.id }}"
+                                           onchange="updateSelectedCount()">
+                                </td>
+                                <td><strong>#{{ s.id }}</strong></td>
+                                <td>{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ s.customer.first_name }} {{ s.customer.last_name }}</td>
+                                <td>
+                                    {% if s.delivery_type == 'cadeteria' %}📦 Cadetería
+                                    {% elif s.delivery_type == 'retiro' %}🏪 Retiro
+                                    {% elif s.delivery_type == 'correo' %}📮 Correo
+                                    {% endif %}
+                                </td>
+                                <td class="amount" data-amount="{{ s.amount }}"></td>
+                                <td>{{ "✅ Si" if s.paid else "⚠️ No" }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PAGINACIÓN -->
+                <div class="pagination">
+                    {% if page > 1 %}
+                        <a href="{{ url_for('sales.print_labels_view', page=page-1) }}" class="page-btn">
+                            « Anterior
+                        </a>
+                    {% else %}
+                        <button class="page-btn" disabled>« Anterior</button>
+                    {% endif %}
+
+                    <span>Página {{ page }} de {{ total_pages }}</span>
+
+                    {% if page < total_pages %}
+                        <a href="{{ url_for('sales.print_labels_view', page=page+1) }}" class="page-btn">
+                            Siguiente »
+                        </a>
+                    {% else %}
+                        <button class="page-btn" disabled>Siguiente »</button>
+                    {% endif %}
+                </div>
+
+            </div>
+        </main>
+
+    </div>
+</div>
+
+<script>
+// Formatear montos
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.amount').forEach(td => {
+        const amount = parseFloat(td.dataset.amount);
+        td.textContent = amount.toLocaleString('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 0
+        });
+    });
+});
+
+// Actualizar contador
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.sale-checkbox:checked');
+    const count = checkboxes.length;
+    
+    document.getElementById('selectedCount').textContent = `${count} seleccionada${count !== 1 ? 's' : ''}`;
+    document.getElementById('printSelectedBtn').disabled = count === 0;
+}
+
+// Toggle all
+function toggleAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.sale-checkbox');
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    updateSelectedCount();
+}
+
+// Select all
+function selectAll() {
+    const checkboxes = document.querySelectorAll('.sale-checkbox');
+    checkboxes.forEach(cb => cb.checked = true);
+    document.getElementById('checkAll').checked = true;
+    updateSelectedCount();
+}
+
+// Deselect all
+function deselectAll() {
+    const checkboxes = document.querySelectorAll('.sale-checkbox');
+    checkboxes.forEach(cb => cb.checked = false);
+    document.getElementById('checkAll').checked = false;
+    updateSelectedCount();
+}
+
+// Descargar PDF seleccionadas
+document.getElementById('printSelectedBtn').addEventListener('click', async () => {
+    const checkboxes = document.querySelectorAll('.sale-checkbox:checked');
+    const saleIds = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (saleIds.length === 0) {
+        alert('Selecciona al menos una venta');
+        return;
+    }
+    
+    // Abrir en nueva pestaña
+    const url = `/pdf/batch-labels?ids=${saleIds.join(',')}`;
+    window.open(url, '_blank');
+});
+</script>
+
+</body>
+</html>

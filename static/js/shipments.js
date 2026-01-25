@@ -28,7 +28,7 @@ function getDayClass(count) {
 
 
 // ======================
-// CALENDARIO
+// CALENDARIO EXTENDIDO (-7 a +14)
 // ======================
 async function loadCalendar() {
     const calendar = document.getElementById("calendar");
@@ -40,7 +40,8 @@ async function loadCalendar() {
     const res = await fetch("/sales/shipments/calendar");
     const counts = await res.json();
 
-    for (let i = 0; i < 15; i++) {
+    // 🔹 AHORA: -7 días hasta +14 días (total 22 días)
+    for (let i = -7; i <= 14; i++) {
         const d = new Date(today);
         d.setDate(today.getDate() + i);
 
@@ -49,7 +50,13 @@ async function loadCalendar() {
 
         const div = document.createElement("div");
         div.dataset.date = iso;
-        div.className = `calendar-day ${getDayClass(qty)}`;
+        
+        // 🔹 Clase base + clase de cantidad + clase de pasado
+        let classList = `calendar-day ${getDayClass(qty)}`;
+        if (i < 0) {
+            classList += ' day-past';  // Días pasados en gris
+        }
+        div.className = classList;
 
         div.innerHTML = `
             ${iso === todayIso ? `<span class="today-badge">HOY</span>` : ""}
@@ -123,6 +130,7 @@ async function loadDay(date, el) {
 
     if (!sales.length) {
         container.innerHTML = "<em>No hay envíos</em>";
+        document.getElementById("printDayBtn").style.display = "none";
         return;
     }
 
@@ -140,7 +148,7 @@ async function loadDay(date, el) {
                     Notas: ${s.notes || "-"}<br>
 
                     <button onclick="enableEdit(${s.id})" class="button-edit">Editar</button>
-                    <button onclick="downloadPDF(${s.id})" class="btn" >Etiqueta</button>
+                    <a href="/pdf/sale/${s.id}/label" target="_blank" class="btn">Etiqueta</a>
                 </div>
 
                 <div class="edit-mode" style="display:none;">
@@ -160,8 +168,8 @@ async function loadDay(date, el) {
     const printBtn = document.getElementById("printDayBtn");
     printBtn.style.display = "inline-block";
     printBtn.onclick = () => {
-    window.open(`/pdf/shipments/day/${date}/labels`, "_blank");
-};
+        window.open(`/pdf/shipments/day/${date}/labels`, "_blank");
+    };
 }
 
 
@@ -203,9 +211,6 @@ async function saveEdit(id) {
 // ======================
 // DRAG START
 // ======================
-
-
-
 document.addEventListener("dragstart", e => {
     if (e.target.classList.contains("shipment-card")) {
         e.dataTransfer.setData("text/plain", e.target.dataset.id);
@@ -219,33 +224,8 @@ document.addEventListener("dragend", e => {
     }
 });
 
-    window.downloadPDF = async function(saleId) {
-        try {
-            const response = await fetch(`/pdf/sale/${saleId}/label`);
-            if (!response.ok) throw new Error("No se pudo generar el comprobante");
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `venta_${saleId}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error(error);
-            showToast("Error al descargar el comprobante", "error");
-        }
-    }
-
-
-
-
-
 
 // ======================
 // INIT
 // ======================
 document.addEventListener("DOMContentLoaded", loadCalendar);
-
-

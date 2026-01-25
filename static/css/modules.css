@@ -53,6 +53,16 @@
     background-color: #ffebee;
 }
 
+/* 🔹 NUEVO: Días pasados en gris */
+.day-past {
+    background-color: #e0e0e0 !important;
+    opacity: 0.7;
+}
+
+.day-past .badge {
+    background-color: #757575;
+}
+
 .badge {
     display: inline-block;
     margin-top: 5px;
@@ -261,13 +271,11 @@
 
 .forms-wrapper.one-form {
     justify-content: center;
-    
 }
 
 .forms-wrapper.one-form .form-panel {
-    max-width: 600px;
+    max-width: 700px;
     width: 100%;
-    
 }
 
 .forms-wrapper.two-forms {
@@ -278,10 +286,6 @@
     flex: 1;
     max-width: 48%;
 }
-
-
-
-
 
 /* =========================
    PROXIMAMENTE

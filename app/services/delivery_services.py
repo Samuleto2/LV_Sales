@@ -5,12 +5,13 @@ from app.extensions import db
 
 
 def get_retiro_pending():
-    """Obtiene pedidos de retiro pendientes (no entregados)"""
+    """Obtiene pedidos de retiro pendientes (no entregados Y pagados)"""
     return (
         Sale.query
         .filter(
             Sale.delivery_type == 'retiro',
-            Sale.delivered_at.is_(None)
+            Sale.delivered_at.is_(None),
+            Sale.paid.is_(True)  # 🔹 SOLO PAGADOS
         )
         .order_by(Sale.created_at.asc())
         .all()
@@ -24,12 +25,13 @@ def get_retiro_overdue():
 
 
 def get_correo_pending():
-    """Obtiene pedidos de correo pendientes (no enviados)"""
+    """Obtiene pedidos de correo pendientes (no enviados Y pagados)"""
     return (
         Sale.query
         .filter(
             Sale.delivery_type == 'correo',
-            Sale.delivered_at.is_(None)
+            Sale.delivered_at.is_(None),
+            Sale.paid.is_(True)  # 🔹 SOLO PAGADOS
         )
         .order_by(Sale.created_at.asc())
         .all()

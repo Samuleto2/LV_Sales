@@ -622,6 +622,25 @@ updateDashboard(turnSales);
         }
     }
 
+        // 🔹 AUTO-EDITAR VENTA SI VIENE DE EXPLORAR VENTAS
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('edit');
+    
+    if (editId) {
+        console.log(`📝 Auto-editando venta #${editId} desde URL`);
+        
+        // Esperar a que todo cargue
+        setTimeout(() => {
+            window.editSale(parseInt(editId));
+            
+            // Limpiar URL sin recargar
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 500);
+    }
+
+
+
+
 });
 
 

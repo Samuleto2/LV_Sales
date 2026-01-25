@@ -109,6 +109,7 @@ def delete_existing_sale(id):
 @sales_bp.get("/explore")
 @login_required
 def explore_sales_page():
+    # Obtener filtros de la query string
     filters = {
         "customer": request.args.get("customer", ""),
         "payment_method": request.args.get("payment_method", ""),
@@ -117,8 +118,9 @@ def explore_sales_page():
         "date_to": request.args.get("date_to", ""),
         "page": int(request.args.get("page", 1))
     }
-
-    data = explore_sales(filters)  # llamamos al servicio
+    
+    data = explore_sales(filters)
+    
     return render_template(
         "explore_sales.html",
         sales=data["sales"],
@@ -128,6 +130,29 @@ def explore_sales_page():
         total_pages=data["total_pages"],
         filters=filters
     )
+
+
+@sales_bp.get("/print-labels")
+@login_required
+def print_labels_view():
+    """Vista para impresión masiva de etiquetas"""
+    page = int(request.args.get('page', 1))
+    per_page = 30
+    
+    # Últimas ventas ordenadas por fecha
+    pagination = (
+        Sale.query
+        .order_by(Sale.created_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+    
+    return render_template(
+        "print_labels.html",
+        sales=pagination.items,
+        page=page,
+        total_pages=pagination.pages
+    )
+
 # Endpoint para marcar venta como pagada
 @sales_bp.post("/<int:sale_id>/mark_paid")
 @login_required
