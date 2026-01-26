@@ -5,8 +5,8 @@ from flask_login import login_required
 from app.services.sales_services import(
     last_sales_service, create_sale, update_sale, delete_sale, 
     get_sale_by_id, filter_sales, mark_sale_paid, explore_sales, 
-    get_sales_by_turn,get_shipments_by_day,get_shipping_calendar,update_shipment
-    )
+    get_sales_by_turn, get_shipments_by_day, get_shipping_calendar, update_shipment
+)
 
 from app.serializers.sales_serializer import(
     sales_to_dict,
@@ -16,13 +16,8 @@ from app.serializers.sales_serializer import(
 sales_bp = Blueprint("sales", __name__, url_prefix="/sales")
 
 @sales_bp.get("/shipments")
-
 def shipments_view():
     return render_template("shipments.html")
-
-# ---------- Helpers ----------
-
-
 
 
 # GET /sales → listado de últimas ventas
@@ -165,7 +160,7 @@ def mark_sale_paid_endpoint(sale_id):
 @sales_bp.get("/last_sales")
 @login_required
 def get_last_sales():
-    sales = last_sales_service(10)  # ahora llama al servicio
+    sales = last_sales_service(10)
     return jsonify([
         {
             "id": s.id,
@@ -193,31 +188,48 @@ def sales_by_turn():
         return jsonify({"error": "Debe proporcionar start y end"}), 400
 
     try:
+        from datetime import datetime
         start_dt = datetime.fromisoformat(start_str)
         end_dt = datetime.fromisoformat(end_str)
     except ValueError:
         return jsonify({"error": "Formato de fecha inválido. Use ISO 8601"}), 400
 
-    # Traer ventas del turno usando tu service
     sales = get_sales_by_turn(start_dt, end_dt)
-
-    # Serializar usando tu serializer
     sales_list = sales_to_list(sales)
 
     return jsonify(sales_list)
 
+
+# 🔹 CORREGIDO: Calendario con parámetros configurables
 @sales_bp.get("/shipments/calendar")
 @login_required
 def shipments_calendar():
-    data = get_shipping_calendar()
+    """
+    Retorna cantidad de envíos por día
+    Query params opcionales:
+    - days_back: días hacia atrás (default 5)
+    - days_forward: días hacia adelante (default 10)
+    """
+    days_back = int(request.args.get('days_back', 5))
+    days_forward = int(request.args.get('days_forward', 10))
+    
+    data = get_shipping_calendar(days_back=days_back, days_forward=days_forward)
+    
     return jsonify(data), 200
 
 
+# 🔹 CORREGIDO: Envíos de un día específico
 @sales_bp.get("/shipments/day/<shipping_date>")
 @login_required
 def shipments_by_day(shipping_date):
+    """
+    Retorna los envíos de una fecha específica
+    Args:
+        shipping_date: formato YYYY-MM-DD
+    """
     sales = get_shipments_by_day(shipping_date)
     return jsonify([sales_to_dict(s) for s in sales]), 200
+
 
 @sales_bp.put("/shipments/<int:sale_id>")
 @login_required
@@ -227,5 +239,3 @@ def update_shipment_endpoint(sale_id):
 
     update_shipment(sale, data)
     return jsonify({"ok": True})
-
-

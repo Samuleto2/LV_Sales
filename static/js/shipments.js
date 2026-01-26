@@ -28,24 +28,39 @@ function getDayClass(count) {
 
 
 // ======================
+// 🔹 OBTENER DÍA DE LA SEMANA
+// ======================
+function getDayName(date) {
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    return days[date.getDay()];
+}
+
+
+// ======================
 // CALENDARIO: -5 días a +10 días
 // ======================
 async function loadCalendar() {
     const calendar = document.getElementById("calendar");
     calendar.innerHTML = "";
 
+    // 🔹 Usar fecha local del navegador (ya está en zona horaria de Argentina)
     const today = new Date();
-    const todayIso = today.toISOString().slice(0, 10);
+    today.setHours(0, 0, 0, 0); // Limpiar la hora
+    
+    const todayIso = formatDateToISO(today);
 
     const res = await fetch("/sales/shipments/calendar");
     const counts = await res.json();
 
-    // 🔹 AHORA: -5 días hasta +10 días (total 16 días)
-    for (let i = -5; i <= 10; i++) {
+    console.log("📅 Counts recibidos del servidor:", counts);
+    console.log("📍 Hoy es:", todayIso);
+
+    // 🔹 RANGO: -5 días hasta +10 días (total 16 días)
+    for (let i = -5; i <= 9; i++) {
         const d = new Date(today);
         d.setDate(today.getDate() + i);
 
-        const iso = d.toISOString().split("T")[0];
+        const iso = formatDateToISO(d);
         const qty = counts[iso] || 0;
 
         const div = document.createElement("div");
@@ -54,14 +69,20 @@ async function loadCalendar() {
         // 🔹 Clase base + clase de cantidad + clase de pasado
         let classList = `calendar-day ${getDayClass(qty)}`;
         if (i < 0) {
-            classList += ' day-past';  // Días pasados en gris
+            classList += ' day-past';
         }
         div.className = classList;
 
-        // 🔹 FIX: Mostrar cantidad correcta en el badge
+        // 🔹 Mostrar: día semana + fecha + cantidad
+        const dayName = getDayName(d);
+        const dateStr = d.toLocaleDateString("es-AR", { 
+            day: '2-digit', 
+            month: '2-digit'
+        });
+
         div.innerHTML = `
             ${iso === todayIso ? `<span class="today-badge">HOY</span>` : ""}
-            <strong>${d.toLocaleDateString("es-AR")}</strong><br>
+            <strong>${dayName} ${dateStr}</strong><br>
             <span class="badge">${qty} envío${qty !== 1 ? 's' : ''}</span>
         `;
 
@@ -116,6 +137,17 @@ async function loadCalendar() {
 
 
 // ======================
+// 🔹 HELPER: Formatear Date a ISO local
+// ======================
+function formatDateToISO(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+
+// ======================
 // DETALLE DEL DÍA
 // ======================
 async function loadDay(date, el) {
@@ -125,6 +157,8 @@ async function loadDay(date, el) {
 
     const res = await fetch(`/sales/shipments/day/${date}`);
     const sales = await res.json();
+
+    console.log(`📦 Envíos del ${date}:`, sales);
 
     const container = document.getElementById("dayDetail");
     container.innerHTML = "";
@@ -149,7 +183,7 @@ async function loadDay(date, el) {
                     Notas: ${s.notes || "-"}<br>
 
                     <button onclick="enableEdit(${s.id})" class="button-edit">Editar</button>
-                    <a href="/pdf/sale/${s.id}/label" target="_blank" class="btn">Etiqueta</a>
+                    <a href="/pdf/sale/${s.id}/label" target="_blank" class="button-download">Etiqueta</a>
                 </div>
 
                 <div class="edit-mode" style="display:none;">
