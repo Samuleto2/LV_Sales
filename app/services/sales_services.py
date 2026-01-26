@@ -101,7 +101,7 @@ def parse_sale_data(data, is_update=False):
         "shipping_date": shipping_date,
         "sales_channel": data.get("sales_channel"),
         "is_cash": is_cash,
-        "has_change": bool(data.get("has_change", False))
+        "has_change": bool(data.get("has_change", False))  # 🔹 AGREGADO
     }
 
 

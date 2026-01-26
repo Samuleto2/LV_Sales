@@ -186,6 +186,9 @@ async function openEditModal(saleId) {
             document.getElementById('edit_shipping_date').value = sale.shipping_date;
         }
         
+        // 🔹 Es un cambio
+        document.getElementById('edit_has_change').checked = sale.has_change || false;
+        
         editModal.style.display = 'block';
         
     } catch (error) {
@@ -235,7 +238,8 @@ editForm.addEventListener('submit', async (e) => {
         paid: document.querySelector('input[name="edit_paid"]:checked')?.value === 'true',
         payment_method: document.querySelector('input[name="edit_payment_method"]:checked')?.value,
         delivery_type: deliveryType,
-        shipping_date: deliveryType === 'cadeteria' ? document.getElementById('edit_shipping_date').value : null
+        shipping_date: deliveryType === 'cadeteria' ? document.getElementById('edit_shipping_date').value : null,
+        has_change: document.getElementById('edit_has_change').checked  // 🔹 AGREGADO
     };
     
     try {

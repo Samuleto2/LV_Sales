@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Correo - Lunita Val</title>
+    <title>Gestión de Cambios - Lunita Val</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/modules.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
@@ -25,8 +25,8 @@
             <a href="{{ url_for('index') }}" class="menu_btn">Vender</a>
             <a href="{{ url_for('sales.shipments_view') }}" class="menu_btn">Cadetería</a>
             <a href="{{ url_for('delivery.retiro_view') }}" class="menu_btn">Retiro</a>
-            <a href="{{ url_for('delivery.correo_view') }}" class="menu_btn active">Correo</a>
-            <a href="{{ url_for('changes.changes_view') }}" class="menu_btn">Cambios</a>
+            <a href="{{ url_for('delivery.correo_view') }}" class="menu_btn">Correo</a>
+            <a href="{{ url_for('changes.changes_view') }}" class="menu_btn active">Cambios</a>
             <a href="{{ url_for('explore_sales') }}" class="menu_btn">Explorar ventas</a>
             <a href="{{ url_for('customers.manage_customers_view') }}" class="menu_btn">Clientes</a>
             <a href="{{ url_for('sales.print_labels_view') }}" class="menu_btn">Imprimir Etiquetas</a>
@@ -40,11 +40,11 @@
 
         <!-- HEADER -->
         <header class="header">
-            <h1 class="view-title">Gestión de Correo</h1>
+            <h1 class="view-title">🔄 Gestión de Cambios</h1>
 
             <div class="dashboard">
                 <div><strong>Pendientes:</strong> <span id="totalPending">0</span></div>
-                <div class="overdue-badge"><strong>Demorados (+10 días):</strong> <span id="totalOverdue">0</span></div>
+                <div class="overdue-badge"><strong>Vencidos (+48hs):</strong> <span id="totalOverdue">0</span></div>
             </div>
         </header>
 
@@ -52,10 +52,10 @@
         <main class="content">
             <div class="content-column">
 
-                <!-- PEDIDOS DEMORADOS -->
+                <!-- CAMBIOS VENCIDOS -->
                 <section class="section-alert" id="overdueSection" style="display: none;">
                     <div class="section-header alert-header">
-                        <h2>⚠️ Pedidos Demorados (más de 10 días sin enviar)</h2>
+                        <h2>⚠️ Cambios Vencidos (más de 48 horas)</h2>
                     </div>
                     <div class="table-wrapper">
                         <table class="delivery-table">
@@ -63,10 +63,9 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Cliente</th>
-                                    <th>Dirección</th>
-                                    <th>Ciudad</th>
+                                    <th>Teléfono</th>
                                     <th>Monto</th>
-                                    <th>Días</th>
+                                    <th>Horas</th>
                                     <th>Fecha Venta</th>
                                     <th>Notas</th>
                                     <th>Acciones</th>
@@ -77,11 +76,11 @@
                     </div>
                 </section>
 
-                <!-- PEDIDOS PENDIENTES -->
+                <!-- CAMBIOS PENDIENTES -->
                 <section class="form-panel">
                     <div class="section-header">
-                        <h2>📮 Pedidos Pendientes de Envío</h2>
-                        <button onclick="loadCorreos()" class="btn"> Actualizar</button>
+                        <h2>🔄 Cambios Pendientes de Recepción</h2>
+                        <button onclick="loadChanges()" class="btn">🔄 Actualizar</button>
                     </div>
                     <br>
                     <div class="table-wrapper">
@@ -90,10 +89,9 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Cliente</th>
-                                    <th>Dirección</th>
-                                    <th>Ciudad</th>
+                                    <th>Teléfono</th>
                                     <th>Monto</th>
-                                    <th>Días</th>
+                                    <th>Horas</th>
                                     <th>Fecha Venta</th>
                                     <th>Notas</th>
                                     <th>Acciones</th>
@@ -110,6 +108,6 @@
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/correo.js') }}"></script>
+<script src="{{ url_for('static', filename='js/changes.js') }}"></script>
 </body>
 </html>

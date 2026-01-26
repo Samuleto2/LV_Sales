@@ -34,12 +34,16 @@ def create_app():
     from app.routes.sales import sales_bp
     from app.routes.pdf_routes import pdf_bp
     from app.routes.delivery_routes import delivery_bp
+    from app.routes.reports_routes import reports_bp 
+    from app.routes.changes_routes import changes_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(customers_bp)
     app.register_blueprint(sales_bp)
     app.register_blueprint(pdf_bp)
     app.register_blueprint(delivery_bp)
+    app.register_blueprint(reports_bp)  
+    app.register_blueprint(changes_bp)  
 
     # Rutas protegidas
     @app.route("/")

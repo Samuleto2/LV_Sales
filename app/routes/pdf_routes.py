@@ -78,6 +78,19 @@ def draw_header(c, width, height, sale_id, images):
     c.line(5*mm, height - 60*mm, width - 5*mm, height - 60*mm)
 
 
+def draw_change_badge(c, width, y):
+    """🔹 Dibuja badge de CAMBIO si corresponde"""
+    c.setFillColor(HexColor('#F59E0B'))
+    c.rect(5*mm, y - 10*mm, width - 10*mm, 10*mm, fill=1, stroke=0)
+    
+    c.setFillColor(HexColor('#000000'))
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(width/2, y - 7*mm, "🔄 ES UN CAMBIO")
+    
+    c.setFillColor(HexColor('#000000'))
+    return y - 15*mm
+
+
 def draw_customer_info(c, customer, y_start):
     """Dibuja información del cliente"""
     y = y_start
@@ -117,11 +130,17 @@ def draw_customer_info(c, customer, y_start):
 
 
 def draw_cadeteria_label(c, sale, customer, width, height, images):
-    """Etiqueta para CADETERÍA (diseño actual)"""
+    """Etiqueta para CADETERÍA"""
     draw_header(c, width, height, sale.id, images)
     
+    y = height - 65*mm
+    
+    # 🔹 Badge de CAMBIO si corresponde
+    if sale.has_change:
+        y = draw_change_badge(c, width, y)
+    
     # Info del cliente
-    y = draw_customer_info(c, customer, height - 65*mm)
+    y = draw_customer_info(c, customer, y)
     
     # Fecha
     c.setFont("Helvetica-Bold", 10)
@@ -140,7 +159,7 @@ def draw_cadeteria_label(c, sale, customer, width, height, images):
     c.drawCentredString(width/2, y, f"Total: ${total_formatted}")
     y -= 10*mm
     
-    # 🔹 NUEVO: Indicador de pago
+    # Indicador de pago
     if not sale.paid:
         c.setFillColor(HexColor('#B91C1C'))
         c.setFont("Helvetica-Bold", 12)
@@ -167,8 +186,8 @@ def draw_cadeteria_label(c, sale, customer, width, height, images):
 
 
 def draw_retiro_label(c, sale, customer, width, height, images):
-    """Etiqueta para RETIRO - Diseño simple y claro"""
-    # 🔹 BANNER GRANDE "RETIRO"
+    """Etiqueta para RETIRO"""
+    # Banner RETIRO
     c.setFillColor(HexColor('#4A90E2'))
     c.rect(0, height - 35*mm, width, 25*mm, fill=1, stroke=0)
     
@@ -176,13 +195,12 @@ def draw_retiro_label(c, sale, customer, width, height, images):
     c.setFont("Helvetica-Bold", 32)
     c.drawCentredString(width/2, height - 25*mm, "RETIRO")
     
-    # Número de venta en blanco
     c.setFont("Helvetica-Bold", 14)
     c.drawCentredString(width/2, height - 32*mm, f"Venta #{sale.id}000")
     
-    c.setFillColor(HexColor('#000000'))  # Volver a negro
+    c.setFillColor(HexColor('#000000'))
     
-    # Logo pequeño
+    # Logo
     try:
         if os.path.exists(images['logo']):
             logo = ImageReader(images['logo'])
@@ -198,38 +216,33 @@ def draw_retiro_label(c, sale, customer, width, height, images):
     except:
         pass
     
-    # Info del cliente
     y = height - 75*mm
     
+    # 🔹 Badge de CAMBIO
+    if sale.has_change:
+        y = draw_change_badge(c, width, y)
+    
+    # Info cliente
     c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(
-        width/2, 
-        y, 
-        f"{customer.first_name} {customer.last_name}"
-    )
+    c.drawCentredString(width/2, y, f"{customer.first_name} {customer.last_name}")
     y -= 10*mm
     
     c.setFont("Helvetica", 12)
     c.drawCentredString(width/2, y, f"Tel: {customer.phone}")
     y -= 15*mm
     
-    # Total muy grande
+    # Total
     c.setFont("Helvetica-Bold", 24)
     total_formatted = f"{sale.amount:,.0f}".replace(",", ".")
     c.drawCentredString(width/2, y, f"$ {total_formatted}")
     y -= 10*mm
     
-    
-    # Fecha de venta
+    # Fecha
     c.setFont("Helvetica", 10)
-    c.drawCentredString(
-        width/2, 
-        y, 
-        f"Fecha: {sale.created_at.strftime('%d/%m/%Y')}"
-    )
+    c.drawCentredString(width/2, y, f"Fecha: {sale.created_at.strftime('%d/%m/%Y')}")
     y -= 10*mm
     
-    # Instrucción
+    # Advertencia
     c.setFont("Helvetica-Bold", 12)
     c.setFillColor(HexColor('#B91C1C'))
     c.drawCentredString(width/2, y, "⚠️ Válido 15 días desde la fecha de venta")
@@ -242,7 +255,7 @@ def draw_retiro_label(c, sale, customer, width, height, images):
         c.drawCentredString(width/2, y, "⚠️ PENDIENTE DE PAGO")
         c.setFillColor(HexColor('#000000'))
     
-    # Notas si existen
+    # Notas
     if sale.notes:
         c.setFont("Helvetica-Bold", 10)
         c.drawString(5*mm, y, "Notas:")
@@ -250,14 +263,14 @@ def draw_retiro_label(c, sale, customer, width, height, images):
         
         c.setFont("Helvetica", 9)
         lines = sale.notes.split('\n')
-        for line in lines[:3]:  # Máximo 3 líneas
+        for line in lines[:3]:
             c.drawString(5*mm, y, line[:80])
             y -= 4*mm
 
 
 def draw_correo_label(c, sale, customer, width, height, images):
-    """Etiqueta para CORREO - Diseño tipo envío postal"""
-    # 🔹 BANNER "CORREO"
+    """Etiqueta para CORREO"""
+    # Banner CORREO
     c.setFillColor(HexColor('#F59E0B'))
     c.rect(0, height - 35*mm, width, 25*mm, fill=1, stroke=0)
     
@@ -286,9 +299,13 @@ def draw_correo_label(c, sale, customer, width, height, images):
     except:
         pass
     
-    # Dirección de envío (grande)
     y = height - 70*mm
     
+    # 🔹 Badge de CAMBIO
+    if sale.has_change:
+        y = draw_change_badge(c, width, y)
+    
+    # Dirección de envío
     c.setFont("Helvetica-Bold", 14)
     c.drawString(5*mm, y, "ENVIAR A:")
     y -= 8*mm
@@ -313,7 +330,7 @@ def draw_correo_label(c, sale, customer, width, height, images):
     c.drawString(5*mm, y, f"Total: $ {total_formatted}")
     y -= 8*mm
     
-    # 🔹 Indicador de pago
+    # Indicador de pago
     if not sale.paid:
         c.setFillColor(HexColor('#B91C1C'))
         c.setFont("Helvetica-Bold", 12)
@@ -326,7 +343,7 @@ def draw_correo_label(c, sale, customer, width, height, images):
     c.drawString(5*mm, y, f"Fecha: {sale.created_at.strftime('%d/%m/%Y')}")
     y -= 12*mm
     
-    # Recuadro de descripción del paquete
+    # Recuadro de descripción
     c.setStrokeColorRGB(0, 0, 0)
     c.setLineWidth(1)
     c.rect(5*mm, y - 20*mm, width - 10*mm, 20*mm, stroke=1, fill=0)
@@ -361,7 +378,7 @@ def download_sale_label(sale_id):
 
     images = get_image_paths()
 
-    # 🔹 SELECCIONAR DISEÑO SEGÚN TIPO DE ENTREGA
+    # Seleccionar diseño según tipo de entrega
     if sale.delivery_type == 'cadeteria':
         draw_cadeteria_label(c, sale, customer, width, height, images)
     elif sale.delivery_type == 'retiro':
@@ -369,7 +386,6 @@ def download_sale_label(sale_id):
     elif sale.delivery_type == 'correo':
         draw_correo_label(c, sale, customer, width, height, images)
     else:
-        # Fallback al diseño de cadetería
         draw_cadeteria_label(c, sale, customer, width, height, images)
 
     c.showPage()
@@ -395,7 +411,7 @@ def download_labels_by_day(shipping_date):
     sales = (
         Sale.query
         .filter(
-            Sale.delivery_type == 'cadeteria',  # 🔹 SOLO CADETERÍA
+            Sale.delivery_type == 'cadeteria',
             Sale.has_shipping.is_(True),
             Sale.shipping_date == ship_date
         )
@@ -447,13 +463,11 @@ def download_batch_labels():
     if len(sale_ids) > 100:
         return jsonify({"error": "Máximo 100 etiquetas por lote"}), 400
     
-    # Obtener ventas
     sales = Sale.query.filter(Sale.id.in_(sale_ids)).order_by(Sale.id.asc()).all()
     
     if not sales:
         return jsonify({"error": "No se encontraron ventas"}), 404
     
-    # Generar PDF
     buffer = BytesIO()
     width, height = 100 * mm, 150 * mm
     c = canvas.Canvas(buffer, pagesize=(width, height))
@@ -465,7 +479,6 @@ def download_batch_labels():
         if not customer:
             continue
         
-        # Usar diseño según tipo
         if sale.delivery_type == 'cadeteria':
             draw_cadeteria_label(c, sale, customer, width, height, images)
         elif sale.delivery_type == 'retiro':
