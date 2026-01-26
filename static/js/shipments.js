@@ -28,7 +28,7 @@ function getDayClass(count) {
 
 
 // ======================
-// CALENDARIO EXTENDIDO (-7 a +14)
+// CALENDARIO: -5 días a +10 días
 // ======================
 async function loadCalendar() {
     const calendar = document.getElementById("calendar");
@@ -40,8 +40,8 @@ async function loadCalendar() {
     const res = await fetch("/sales/shipments/calendar");
     const counts = await res.json();
 
-    // 🔹 AHORA: -7 días hasta +14 días (total 22 días)
-    for (let i = -7; i <= 14; i++) {
+    // 🔹 AHORA: -5 días hasta +10 días (total 16 días)
+    for (let i = -5; i <= 10; i++) {
         const d = new Date(today);
         d.setDate(today.getDate() + i);
 
@@ -58,10 +58,11 @@ async function loadCalendar() {
         }
         div.className = classList;
 
+        // 🔹 FIX: Mostrar cantidad correcta en el badge
         div.innerHTML = `
             ${iso === todayIso ? `<span class="today-badge">HOY</span>` : ""}
             <strong>${d.toLocaleDateString("es-AR")}</strong><br>
-            <span class="badge">${qty} envíos</span>
+            <span class="badge">${qty} envío${qty !== 1 ? 's' : ''}</span>
         `;
 
         div.addEventListener("click", () => loadDay(iso, div));
@@ -159,7 +160,7 @@ async function loadDay(date, el) {
                     <textarea class="input-text" id="edit-notes-${s.id}">${s.notes || ""}</textarea><br>
 
                     <button onclick="saveEdit(${s.id})" class="button-edit">Guardar</button>
-                    <button onclick="cancelEdit(${s.id})" class="button-cancel">Cancelar</button>
+                    <button onclick="cancelEdit(${s.id})" class="button-delete">Cancelar</button>
                 </div>
             </div>
         `;

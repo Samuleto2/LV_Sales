@@ -23,19 +23,8 @@ button {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
-
-#customerFormDiv {
-    display: none;
-}
-
-#customerFormDiv {
-    display: none;
-}
-#customerFormDiv.show {
-    display: block;
-}   
 
 /* =========================
    LAYOUT
@@ -156,15 +145,23 @@ button {
 }
 
 /* =========================
-   BOTONES GLOBALES
+   🔹 BOTONES ESTANDARIZADOS
+   Azul = Editar/Acciones principales
+   Rojo = Borrar/Cancelar
+   Naranja = Descargar/Neutral
+   Verde = Confirmar/Marcar como hecho
 ========================= */
+
+/* Reset base para todos los botones */
 .btn,
 .button,
 .button-edit,
 .button-delete,
 .button-download,
 .btn-pay,
-.btnNewCustomer {
+.btnNewCustomer,
+.btn-deliver,
+.btn-ship {
     padding: 8px 16px;
     border: none;
     border-radius: 6px;
@@ -175,17 +172,17 @@ button {
     transition: all 0.2s ease;
     display: inline-block;
     text-align: center;
+    text-decoration: none;
 }
 
+/* 🔵 AZUL - Editar, Nuevo, Acciones generales */
 .button-edit,
-.btn-pay,
 .btnNewCustomer,
 .btn {
     background: linear-gradient(135deg, #4A90E2, #357ABD);
 }
 
 .button-edit:hover,
-.btn-pay:hover,
 .btnNewCustomer:hover,
 .btn:hover {
     background: linear-gradient(135deg, #357ABD, #2a5ca8);
@@ -193,6 +190,7 @@ button {
     box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
 }
 
+/* 🔴 ROJO - Borrar, Cancelar */
 .button-delete {
     background: linear-gradient(135deg, #B91C1C, #7F1D1D);
 }
@@ -203,6 +201,7 @@ button {
     box-shadow: 0 4px 8px rgba(185, 28, 28, 0.3);
 }
 
+/* 🟠 NARANJA - Descargar, Acciones neutrales */
 .button-download {
     background: linear-gradient(135deg, #F59E0B, #D97706);
 }
@@ -213,8 +212,26 @@ button {
     box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
 }
 
+/* 🟢 VERDE - Marcar pago, Entregar, Enviar */
+.btn-pay,
+.btn-deliver,
+.btn-ship {
+    background: linear-gradient(135deg, #28a745, #218838);
+}
+
+.btn-pay:hover,
+.btn-deliver:hover,
+.btn-ship:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+/* Estados deshabilitados */
 .btn:disabled,
-.button:disabled {
+.button:disabled,
+.button-edit:disabled,
+.btn-pay:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
@@ -386,6 +403,44 @@ button {
     height: 1px;
     background-color: #e5e7eb;
     margin: 16px 0;
+}
+
+/* =========================
+   🔹 FORMULARIO CLIENTE EN INDEX
+   Mantiene comportamiento de style.css
+========================= */
+#customerFormDiv {
+    display: none;
+}
+
+#customerFormDiv.show {
+    display: block;
+}
+
+/* Wrapper de formularios dinámicos */
+.forms-wrapper {
+    display: flex;
+    width: 100%;
+    gap: 20px;
+    transition: all 0.3s ease;
+}
+
+.forms-wrapper.one-form {
+    justify-content: center;
+}
+
+.forms-wrapper.one-form .form-panel {
+    max-width: 700px;
+    width: 100%;
+}
+
+.forms-wrapper.two-forms {
+    justify-content: space-between;
+}
+
+.forms-wrapper.two-forms .form-panel {
+    flex: 1;
+    max-width: 48%;
 }
 
 /* =========================
@@ -593,5 +648,13 @@ table tbody tr:hover {
         flex-direction: column;
         width: 100%;
         align-items: stretch;
+    }
+
+    .forms-wrapper.two-forms {
+        flex-direction: column;
+    }
+
+    .forms-wrapper.two-forms .form-panel {
+        max-width: 100%;
     }
 }

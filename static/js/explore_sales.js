@@ -3,7 +3,7 @@
 // ----------------------------
 const input = document.getElementById('customer-input');
 const suggestions = document.getElementById('customer-suggestions');
-const customerIdInput = document.getElementById('customer_id'); // input hidden
+const customerIdInput = document.getElementById('customer_id');
 let timeout = null;
 
 if (input) {
@@ -62,137 +62,201 @@ function showToast(message, type = "success") {
 }
 
 // ----------------------------
-// Variables de paginación
+// Formatear montos
 // ----------------------------
-let currentPage = 1;
-let totalPages = 1;
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.amount').forEach(td => {
+        const amount = parseFloat(td.dataset.amount);
+        td.textContent = amount.toLocaleString('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 0
+        });
+    });
+});
 
 // ----------------------------
-// Recargar tabla de ventas
+// Ir a página manteniendo filtros
 // ----------------------------
-async function loadSales(page = 1) {
+function goToPage(pageNum) {
+    const form = document.getElementById('filterForm');
+    const formData = new FormData(form);
+    
     const params = new URLSearchParams();
-    const customerId = customerIdInput.value;
-    const payment_method = document.querySelector('input[name="payment_method"]').value;
-    const paid = document.querySelector('select[name="paid"]').value;
-    const date_from = document.querySelector('input[name="date_from"]').value;
-    const date_to = document.querySelector('input[name="date_to"]').value;
-
-    if (customerId) params.append('customer_id', customerId);
-    if (payment_method) params.append('payment_method', payment_method);
-    if (paid) params.append('paid', paid);
-    if (date_from) params.append('date_from', date_from);
-    if (date_to) params.append('date_to', date_to);
-    params.append('page', page);
-
-    try {
-        const res = await fetch(`/sales/explore/json?${params.toString()}`);
-        const data = await res.json();
-
-        const tbody = document.querySelector("#salesTable tbody");
-        tbody.innerHTML = '';
-
-        if (!data.sales.length) {
-            tbody.innerHTML = "<tr><td colspan='8'>Sin resultados</td></tr>";
-            return;
-        }
-
-        data.sales.forEach(s => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${s.customer_name}</td>
-                <td>${s.sale_date}</td>
-                <td class="amount" data-amount="${s.amount}">${s.amount}</td>
-                <td>${s.payment_method}</td>
-                <td>${s.paid ? 'Sí' : 'No'}</td>
-                <td>${s.delivery_type || ''}</td>
-                <td><button class="btn btn-pay" data-sale="${s.id}" ${s.paid ? 'disabled' : ''}>Pagar</button></td>
-                <td><button class="button-delete" data-url="/sales/${s.id}">Eliminar</button></td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        // Formatear montos
-        document.querySelectorAll('.amount').forEach(td => {
-            const amount = parseFloat(td.dataset.amount);
-            td.textContent = amount.toLocaleString('es-AR', {
-                style: 'currency',
-                currency: 'ARS',
-                minimumFractionDigits: 0
-            });
-        });
-
-        // Reasignar eventos
-        document.querySelectorAll('.button-delete').forEach(btn => {
-            btn.addEventListener('click', () => deleteSale(btn.dataset.url));
-        });
-        document.querySelectorAll('.btn-pay').forEach(btn => {
-            btn.addEventListener('click', () => markSalePaid(btn.dataset.sale));
-        });
-
-        // Actualizar paginación
-        currentPage = data.page;
-        totalPages = data.total_pages;
-        renderPagination();
-    } catch (err) {
-        console.error(err);
-        showToast("Error cargando ventas", "error");
+    for (let [key, value] of formData.entries()) {
+        if (value) params.append(key, value);
     }
-}
-
-// ----------------------------
-// Renderizar paginación
-// ----------------------------
-function renderPagination() {
-    const paginationDiv = document.getElementById('pagination');
-    if (!paginationDiv) return;
-
-    paginationDiv.innerHTML = '';
-
-    const prevBtn = document.createElement('button');
-    prevBtn.textContent = 'Anterior';
-    prevBtn.disabled = currentPage <= 1;
-    prevBtn.addEventListener('click', () => loadSales(currentPage - 1));
-    paginationDiv.appendChild(prevBtn);
-
-    const nextBtn = document.createElement('button');
-    nextBtn.textContent = 'Siguiente';
-    nextBtn.disabled = currentPage >= totalPages;
-    nextBtn.addEventListener('click', () => loadSales(currentPage + 1));
-    paginationDiv.appendChild(nextBtn);
-
-    const info = document.createElement('span');
-    info.textContent = ` Página ${currentPage} de ${totalPages} `;
-    paginationDiv.appendChild(info);
+    params.set('page', pageNum);
+    
+    window.location.href = '/sales/explore?' + params.toString();
 }
 
 // ----------------------------
 // Borrar venta
 // ----------------------------
-async function deleteSale(url) {
-    if (!confirm("¿Eliminar venta?")) return;
-    const res = await fetch(url, { method: "DELETE" });
-    const result = await res.json();
-    showToast(result.message || "Venta eliminada");
-    loadSales(currentPage);
+async function deleteSale(saleId) {
+    if (!confirm(`¿Eliminar venta #${saleId}?`)) return;
+    
+    try {
+        const res = await fetch(`/sales/${saleId}`, { method: "DELETE" });
+        const result = await res.json();
+        
+        if (res.ok) {
+            showToast(result.message || "Venta eliminada", "success");
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(result.error || "Error al eliminar", "error");
+        }
+    } catch (error) {
+        console.error(error);
+        showToast("Error al eliminar venta", "error");
+    }
 }
 
 // ----------------------------
-// Marcar venta como pagada
+// Marcar como pagado
 // ----------------------------
-function markSalePaid(saleId) {
-    fetch(`/sales/${saleId}/mark_paid`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
-        .then(res => res.json())
-        .then(data => {
-            if (data.message) {
-                showToast(data.message);
-                loadSales(currentPage);
+async function markSalePaid(saleId) {
+    try {
+        const res = await fetch(`/sales/${saleId}/mark_paid`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'} 
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            showToast(data.message, "success");
+            
+            // 🔹 Actualizar visualmente sin recargar
+            const row = document.querySelector(`button[onclick="markSalePaid(${saleId})"]`)?.closest('tr');
+            if (row) {
+                const paidCell = row.querySelector('.paid-status');
+                if (paidCell) paidCell.textContent = "Si";
+                
+                const payBtn = row.querySelector(`button[onclick="markSalePaid(${saleId})"]`);
+                if (payBtn) payBtn.remove();
             }
-        })
-        .catch(err => console.error(err));
+        } else {
+            showToast(data.error || 'Error al marcar como pagado', 'error');
+        }
+    } catch (error) {
+        console.error(error);
+        showToast('Error al procesar solicitud', 'error');
+    }
 }
 
 // ----------------------------
-// Inicializamos tabla al cargar la página
+// 🔹 MODAL DE EDICIÓN
 // ----------------------------
-document.addEventListener('DOMContentLoaded', () => loadSales());
+const editModal = document.getElementById('editSaleModal');
+const editForm = document.getElementById('editSaleForm');
+
+async function openEditModal(saleId) {
+    try {
+        const res = await fetch(`/sales/${saleId}`);
+        if (!res.ok) throw new Error("Error cargando venta");
+        
+        const sale = await res.json();
+        
+        // Llenar modal
+        document.getElementById('modalSaleId').textContent = saleId;
+        document.getElementById('edit_sale_id').value = saleId;
+        document.getElementById('edit_amount').value = sale.amount;
+        document.getElementById('edit_notes').value = sale.notes || '';
+        
+        // Pagado
+        document.querySelectorAll('input[name="edit_paid"]').forEach(radio => {
+            radio.checked = radio.value === (sale.paid ? 'true' : 'false');
+        });
+        
+        // Método pago
+        document.querySelectorAll('input[name="edit_payment_method"]').forEach(radio => {
+            radio.checked = radio.value === sale.payment_method;
+        });
+        
+        // Tipo entrega
+        document.querySelectorAll('input[name="edit_delivery_type"]').forEach(radio => {
+            radio.checked = radio.value === sale.delivery_type;
+        });
+        
+        // Fecha envío
+        updateShippingDateVisibility();
+        if (sale.shipping_date) {
+            document.getElementById('edit_shipping_date').value = sale.shipping_date;
+        }
+        
+        editModal.style.display = 'block';
+        
+    } catch (error) {
+        console.error(error);
+        showToast("Error al cargar venta", "error");
+    }
+}
+
+function closeEditModal() {
+    editModal.style.display = 'none';
+}
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    if (event.target === editModal) {
+        closeEditModal();
+    }
+}
+
+// Toggle fecha envío según delivery_type
+function updateShippingDateVisibility() {
+    const deliveryType = document.querySelector('input[name="edit_delivery_type"]:checked')?.value;
+    const shippingGroup = document.getElementById('edit_shipping_date_group');
+    
+    if (deliveryType === 'cadeteria') {
+        shippingGroup.style.display = 'block';
+    } else {
+        shippingGroup.style.display = 'none';
+        document.getElementById('edit_shipping_date').value = '';
+    }
+}
+
+document.querySelectorAll('input[name="edit_delivery_type"]').forEach(radio => {
+    radio.addEventListener('change', updateShippingDateVisibility);
+});
+
+// Submit modal
+editForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const saleId = document.getElementById('edit_sale_id').value;
+    const deliveryType = document.querySelector('input[name="edit_delivery_type"]:checked')?.value;
+    
+    const data = {
+        amount: parseFloat(document.getElementById('edit_amount').value),
+        notes: document.getElementById('edit_notes').value,
+        paid: document.querySelector('input[name="edit_paid"]:checked')?.value === 'true',
+        payment_method: document.querySelector('input[name="edit_payment_method"]:checked')?.value,
+        delivery_type: deliveryType,
+        shipping_date: deliveryType === 'cadeteria' ? document.getElementById('edit_shipping_date').value : null
+    };
+    
+    try {
+        const res = await fetch(`/sales/${saleId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        
+        if (res.ok) {
+            showToast(result.message || "Venta actualizada", "success");
+            closeEditModal();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(result.error || "Error al actualizar", "error");
+        }
+        
+    } catch (error) {
+        console.error(error);
+        showToast("Error al guardar cambios", "error");
+    }
+});

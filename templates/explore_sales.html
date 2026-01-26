@@ -39,10 +39,6 @@
         <!-- HEADER -->
         <header class="header">
             <h1 class="view-title">Explorar Ventas</h1>
-
-            <a href="{{ url_for('index') }}" class="btn">
-                Ir a crear venta
-            </a>
         </header>
 
         <!-- MAIN -->
@@ -127,18 +123,18 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('index') }}?edit={{ s.id }}" class="button-edit">
+                                    <button onclick="openEditModal({{ s.id }})" class="button-edit">
                                         Editar
-                                    </a>
+                                    </button>
 
                                     <a href="{{ url_for('pdf.download_sale_label', sale_id=s.id) }}"
                                        target="_blank"
-                                       class="btn">
+                                       class="button-download">
                                         Etiqueta
                                     </a>
 
                                     <button
-                                        class="button button-delete"
+                                        class="button-delete"
                                         onclick="deleteSale({{ s.id }})">
                                         Borrar
                                     </button>
@@ -186,85 +182,82 @@
     </div>
 </div>
 
-<script>
-// Función para ir a página manteniendo filtros
-function goToPage(pageNum) {
-    const form = document.getElementById('filterForm');
-    const formData = new FormData(form);
-    
-    const params = new URLSearchParams();
-    for (let [key, value] of formData.entries()) {
-        if (value) params.append(key, value);
-    }
-    params.set('page', pageNum);
-    
-    window.location.href = '{{ url_for("sales.explore_sales_page") }}?' + params.toString();
-}
-
-// Toast
-function showToast(message, type = "success") {
-    const toast = document.createElement("div");
-    toast.textContent = message;
-    toast.style.position = "fixed";
-    toast.style.top = "20px";
-    toast.style.right = "20px";
-    toast.style.padding = "10px 20px";
-    toast.style.borderRadius = "5px";
-    toast.style.backgroundColor = type === "success" ? "#4caf50" : "#f44336";
-    toast.style.color = "white";
-    toast.style.zIndex = 9999;
-    toast.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-
-// Formatear montos
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.amount').forEach(td => {
-        const amount = parseFloat(td.dataset.amount);
-        td.textContent = amount.toLocaleString('es-AR', {
-            style: 'currency',
-            currency: 'ARS',
-            minimumFractionDigits: 0
-        });
-    });
-});
-
-// Borrar venta
-async function deleteSale(saleId) {
-    if (!confirm(`¿Eliminar venta #${saleId}?`)) return;
-    
-    try {
-        const res = await fetch(`/sales/${saleId}`, { method: "DELETE" });
-        const result = await res.json();
-        showToast(result.message || "Venta eliminada");
-        location.reload();
-    } catch (error) {
-        showToast("Error al eliminar venta", "error");
-    }
-}
-
-// Marcar como pagado
-async function markSalePaid(saleId) {
-    try {
-        const res = await fetch(`/sales/${saleId}/mark_paid`, { 
-            method: 'POST', 
-            headers: {'Content-Type': 'application/json'} 
-        });
+<!-- 🔹 MODAL DE EDICIÓN -->
+<div id="editSaleModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditModal()">&times;</span>
+        <h2>Editar Venta #<span id="modalSaleId"></span></h2>
         
-        const data = await res.json();
-        
-        if (res.ok) {
-            showToast(data.message);
-            location.reload();
-        } else {
-            showToast(data.error || 'Error al marcar como pagado', 'error');
-        }
-    } catch (error) {
-        showToast('Error al procesar solicitud', 'error');
-    }
-}
-</script>
+        <form id="editSaleForm">
+            <input type="hidden" id="edit_sale_id">
+            
+            <div class="form-group">
+                <label>Monto</label>
+                <div class="money-input">
+                    <span class="currency">$</span>
+                    <input type="number" step="0.01" id="edit_amount" required class="input-text">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Notas/Aclaraciones</label>
+                <textarea id="edit_notes" class="input-text"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Pagado?</label>
+                <div class="form-options">
+                    <label class="option">
+                        <input type="radio" name="edit_paid" value="true"> SI
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="edit_paid" value="false"> NO
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Método de pago</label>
+                <div class="form-options">
+                    <label class="option">
+                        <input type="radio" name="edit_payment_method" value="transfer"> Transferencia
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="edit_payment_method" value="card"> Tarjeta/QR
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="edit_payment_method" value="cash"> Efectivo
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Tipo de entrega</label>
+                <div class="form-options">
+                    <label class="option">
+                        <input type="radio" name="edit_delivery_type" value="cadeteria"> Cadetería
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="edit_delivery_type" value="retiro"> Retiro
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="edit_delivery_type" value="correo"> Correo
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" id="edit_shipping_date_group" style="display:none;">
+                <label>Fecha de envío</label>
+                <input type="date" id="edit_shipping_date" class="input-date">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button-edit">Guardar</button>
+                <button type="button" onclick="closeEditModal()" class="button-delete">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script src="{{ url_for('static', filename='js/explore_sales.js') }}"></script>
 </body>
