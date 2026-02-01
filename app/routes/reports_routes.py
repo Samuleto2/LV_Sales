@@ -11,6 +11,7 @@ from app.services.reports_service import (
     compare_periods,
     get_changes_stats,
     get_monthly_changes_trend,
+    get_today_sales,
     mark_change_received
 )
 from app.services.sales_services import today_ar
@@ -70,7 +71,8 @@ def get_dashboard():
         'channels': get_sales_by_channel(current_month_start, current_month_end),
         'delivery_types': get_sales_by_delivery_type(current_month_start, current_month_end),
         'daily_sales': get_daily_sales(today - timedelta(days=30), today),
-        'top_customers': get_top_customers(current_month_start, current_month_end, limit=5)
+        'top_customers': get_top_customers(current_month_start, current_month_end, limit=5),
+        'today_sales': get_today_sales() 
     })
 
 

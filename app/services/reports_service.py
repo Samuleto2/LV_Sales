@@ -401,3 +401,32 @@ def mark_change_received(sale_id):
     db.session.commit()
     
     return sale, "Cambio marcado como recepcionado"
+
+def get_today_sales():
+    today = today_ar()
+
+    start_utc = to_utc_datetime(today, end_of_day=False)
+    end_utc = to_utc_datetime(today, end_of_day=True)
+
+    count = (
+        db.session.query(func.count(Sale.id))
+        .filter(
+            Sale.created_at >= start_utc,
+            Sale.created_at <= end_utc
+        )
+        .scalar()
+    )
+
+    total = (
+        db.session.query(func.coalesce(func.sum(Sale.amount), 0))
+        .filter(
+            Sale.created_at >= start_utc,
+            Sale.created_at <= end_utc
+        )
+        .scalar()
+    )
+
+    return {
+        "count": count,
+        "total": float(total)
+    }

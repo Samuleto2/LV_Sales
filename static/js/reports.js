@@ -69,6 +69,11 @@ pinForm.addEventListener('submit', async (e) => {
         showToast('Error al verificar PIN', 'error');
     }
 });
+function updateTodaySales(today) {
+    document.getElementById('todaySales').textContent = formatMoney(today.total);
+    document.getElementById('todayCount').textContent = today.count;
+}
+
 
 // ======================
 // CARGAR DASHBOARD
@@ -84,6 +89,7 @@ async function loadDashboard() {
         
         // Actualizar tarjetas
         updateStatsCards(data.comparison);
+        updateTodaySales(data.today_sales);
         
         // Gráficos
         renderDailySalesChart(data.daily_sales);
