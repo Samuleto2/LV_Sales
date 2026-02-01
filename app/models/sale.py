@@ -26,7 +26,7 @@ class Sale(db.Model):
      # 🔹 NUEVO: Tracking de entregas
     delivered_at = db.Column(db.DateTime, nullable=True)  # Cuando se entregó/envió
     shipped_at = db.Column(db.DateTime, nullable=True)    # Para correo: cuando se despachó
-    completed_at = db.Column(db.DateTime, nullable=True)  # Ya existía
+    
     
     customer = db.relationship("Customer", back_populates="sales")
     

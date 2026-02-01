@@ -10,7 +10,8 @@ from app.services.sales_services import(
 
 from app.serializers.sales_serializer import(
     sales_to_dict,
-    sales_to_list
+    sales_to_list,
+    utc_to_ar
 )
 
 sales_bp = Blueprint("sales", __name__, url_prefix="/sales")
@@ -115,10 +116,15 @@ def explore_sales_page():
     }
     
     data = explore_sales(filters)
-    
+    sales = data["sales"]
+
+    for s in sales:
+        if s.created_at:
+            s.created_at = utc_to_ar(s.created_at)
+
     return render_template(
         "explore_sales.html",
-        sales=data["sales"],
+        sales=sales,
         page=data["page"],
         per_page=data["per_page"],
         total_sales=data["total_sales"],

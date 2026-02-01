@@ -1,4 +1,4 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from zoneinfo import ZoneInfo
@@ -34,6 +34,34 @@ def to_ar_date(iso_string):
     # Si tiene timestamp, convertir a zona horaria
     dt = datetime.fromisoformat(iso_string.replace('Z', '+00:00'))
     return dt.astimezone(TIMEZONE).date()
+
+
+def to_utc_datetime(local_date, end_of_day=False):
+    """
+    🔹 NUEVA FUNCIÓN: Convierte fecha local de Argentina a datetime UTC para queries
+    
+    Args:
+        local_date: date object en zona horaria de Argentina
+        end_of_day: Si True, usa 23:59:59, sino usa 00:00:00
+    
+    Returns:
+        datetime en UTC (naive, como lo espera SQLAlchemy)
+    
+    Example:
+        hoy = today_ar()  # 2026-01-28 en Argentina
+        inicio = to_utc_datetime(hoy, end_of_day=False)  # 2026-01-28 03:00:00 UTC
+        fin = to_utc_datetime(hoy, end_of_day=True)      # 2026-01-29 02:59:59 UTC
+    """
+    if end_of_day:
+        local_dt = datetime.combine(local_date, time(23, 59, 59))
+    else:
+        local_dt = datetime.combine(local_date, time(0, 0, 0))
+    
+    # Agregar zona horaria y convertir a UTC
+    local_dt = local_dt.replace(tzinfo=TIMEZONE)
+    utc_dt = local_dt.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)  # Naive UTC
+    
+    return utc_dt
 
 
 # =========================
@@ -101,7 +129,7 @@ def parse_sale_data(data, is_update=False):
         "shipping_date": shipping_date,
         "sales_channel": data.get("sales_channel"),
         "is_cash": is_cash,
-        "has_change": bool(data.get("has_change", False))  # 🔹 AGREGADO
+        "has_change": bool(data.get("has_change", False))
     }
 
 
@@ -112,11 +140,10 @@ def parse_sale_data(data, is_update=False):
 def create_sale(data):
     parsed = parse_sale_data(data)
 
-    # 🔹 Usar fecha y hora de Argentina
     sale = Sale(
-        **parsed,
-        sale_date=now_ar(),
-        created_at=now_ar()
+        **parsed
+        # NO setear created_at
+        # NO setear sale_date
     )
 
     db.session.add(sale)
@@ -160,6 +187,9 @@ def mark_sale_paid(sale_id):
 # =========================
 
 def filter_sales(customer="", payment_method="", paid="", date_from="", date_to=""):
+    """
+    🔹 CORREGIDO: Filtra ventas con manejo correcto de zona horaria
+    """
     query = Sale.query.join(Customer)
 
     if customer:
@@ -175,16 +205,24 @@ def filter_sales(customer="", payment_method="", paid="", date_from="", date_to=
     elif paid.lower() in ("no", "false", "0"):
         query = query.filter(Sale.paid.is_(False))
 
+    # 🔹 CORRECCIÓN: Convertir fechas correctamente
     if date_from:
-        query = query.filter(Sale.created_at >= datetime.fromisoformat(date_from))
+        from_date = date.fromisoformat(date_from)
+        from_utc = to_utc_datetime(from_date, end_of_day=False)
+        query = query.filter(Sale.created_at >= from_utc)
 
     if date_to:
-        query = query.filter(Sale.created_at <= datetime.fromisoformat(date_to))
+        to_date = date.fromisoformat(date_to)
+        to_utc = to_utc_datetime(to_date, end_of_day=True)
+        query = query.filter(Sale.created_at <= to_utc)
 
     return query.order_by(Sale.created_at.desc()).all()
 
 
 def explore_sales(filters):
+    """
+    🔹 CORREGIDO: Explora ventas con filtros, manejando correctamente zona horaria
+    """
     customer = filters.get("customer", "")
     payment_method = filters.get("payment_method", "")
     paid = filters.get("paid", "")
@@ -208,11 +246,16 @@ def explore_sales(filters):
     elif paid.lower() in ("no", "false", "0"):
         query = query.filter(Sale.paid.is_(False))
 
+    # 🔹 CORRECCIÓN: Convertir fechas correctamente
     if date_from:
-        query = query.filter(Sale.created_at >= datetime.fromisoformat(date_from))
+        from_date = date.fromisoformat(date_from)
+        from_utc = to_utc_datetime(from_date, end_of_day=False)
+        query = query.filter(Sale.created_at >= from_utc)
 
     if date_to:
-        query = query.filter(Sale.created_at <= datetime.fromisoformat(date_to))
+        to_date = date.fromisoformat(date_to)
+        to_utc = to_utc_datetime(to_date, end_of_day=True)
+        query = query.filter(Sale.created_at <= to_utc)
 
     total = query.count()
 
@@ -321,3 +364,39 @@ def get_shipments_by_day(shipping_date_str: str):
         .order_by(Sale.id.asc())
         .all()
     )
+
+
+# =========================
+#   FUNCIONES HELPER NUEVAS
+# =========================
+
+def get_sales_today():
+    """
+    Obtiene todas las ventas del día de hoy en Argentina
+    """
+    hoy = today_ar()
+    inicio_utc = to_utc_datetime(hoy, end_of_day=False)
+    fin_utc = to_utc_datetime(hoy, end_of_day=True)
+    
+    return Sale.query.filter(
+        Sale.created_at >= inicio_utc,
+        Sale.created_at <= fin_utc
+    ).order_by(Sale.created_at.desc()).all()
+
+
+def get_sales_today_by_channel(channel):
+    """
+    Obtiene ventas del día de hoy filtradas por canal
+    
+    Args:
+        channel: 'SHOWROOM', 'WHATSAPP', o 'VIVO'
+    """
+    hoy = today_ar()
+    inicio_utc = to_utc_datetime(hoy, end_of_day=False)
+    fin_utc = to_utc_datetime(hoy, end_of_day=True)
+    
+    return Sale.query.filter(
+        Sale.created_at >= inicio_utc,
+        Sale.created_at <= fin_utc,
+        Sale.sales_channel == channel
+    ).order_by(Sale.created_at.desc()).all()
