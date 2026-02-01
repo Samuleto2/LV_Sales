@@ -131,3 +131,24 @@ def top_customers():
     customers = get_top_customers(start_date, end_date, limit)
     
     return jsonify(customers)
+
+@reports_bp.get("/index-summary")
+@login_required
+def index_summary():
+    """
+    Resumen rápido para dashboard del index
+    """
+    today = today_ar()
+
+    today_sales = get_today_sales()
+    summary_month = get_sales_summary(today.replace(day=1), today)
+
+    return jsonify({
+        "today": today_sales,
+        "month": {
+            "total": summary_month["total_amount"],
+            "count": summary_month["total_sales"],
+            "unpaid_amount": summary_month["unpaid_amount"],
+            "unpaid_sales": summary_month["unpaid_sales"]
+        }
+    })

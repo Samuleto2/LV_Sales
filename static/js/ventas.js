@@ -49,114 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return date.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
-// ----------------------------
-// Variables globales - AHORA CON PERSISTENCIA
-// ----------------------------
-const STORAGE_KEY = 'turnSales';
-
-// Cargar ventas del localStorage al iniciar
-let turnSales = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-
-// ----------------------------
-// Función para actualizar el dashboard
-// ----------------------------
-function updateDashboard(sales) {
-    let totalVendido = 0;
-    let cantidadVentas = 0;
-    let totalPagado = 0;
-    let totalImpago = 0;
-
-    sales.forEach(sale => {
-        const amount = Number(sale.amount) || 0;
-        const paid = !!sale.paid;
-
-        totalVendido += amount;
-        cantidadVentas += 1;
-        if (paid) totalPagado += amount;
-        else totalImpago += amount;
-    });
-
-    document.getElementById("totalVendido").textContent = formatMoney(totalVendido);
-    document.getElementById("cantidadVentas").textContent = cantidadVentas;
-    document.getElementById("totalPagado").textContent = formatMoney(totalPagado);
-    document.getElementById("totalImpago").textContent = formatMoney(totalImpago);
-}
-
-// ----------------------------
-// Función para agregar una venta al turno
-// ----------------------------
-function addSaleToTurn(sale) {
-    sale.amount = Number(sale.amount) || 0;
-    sale.paid = !!sale.paid;
-    sale.id = sale.id || Date.now(); // Asegurar que tiene ID
-
-    turnSales.push(sale);
-    
-    // 🔹 GUARDAR EN LOCALSTORAGE
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(turnSales));
-    
-    updateDashboard(turnSales);
-}
-
-// ----------------------------
-// Función para actualizar una venta existente en el turno
-// ----------------------------
-function updateSaleInTurn(saleId, updatedData) {
-    const index = turnSales.findIndex(s => s.id === saleId);
-    
-    if (index !== -1) {
-        // Actualizar la venta existente
-        turnSales[index] = {
-            ...turnSales[index],
-            ...updatedData,
-            amount: Number(updatedData.amount) || turnSales[index].amount,
-            paid: !!updatedData.paid
-        };
-    } else {
-        // Si no existe, agregarla
-        addSaleToTurn({
-            id: saleId,
-            amount: Number(updatedData.amount) || 0,
-            paid: !!updatedData.paid
-        });
-    }
-    
-    // 🔹 GUARDAR EN LOCALSTORAGE
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(turnSales));
-    
-    updateDashboard(turnSales);
-}
-
-// ----------------------------
-// Función para eliminar una venta del turno
-// ----------------------------
-function removeSaleFromTurn(saleId) {
-    turnSales = turnSales.filter(s => s.id !== saleId);
-    
-    // 🔹 GUARDAR EN LOCALSTORAGE
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(turnSales));
-    
-    updateDashboard(turnSales);
-}
-
-// ----------------------------
-// Botón de reset
-// ----------------------------
-document.getElementById("resetTurnBtn").addEventListener("click", () => {
-    if (confirm("¿Estás seguro de resetear el contador del turno?")) {
-        turnSales = [];
-        
-        // 🔹 LIMPIAR LOCALSTORAGE
-        localStorage.removeItem(STORAGE_KEY);
-        
-        updateDashboard(turnSales);
-        showToast("Contador reseteado");
-    }
-});
-
-// 🔹 ACTUALIZAR DASHBOARD AL CARGAR LA PÁGINA
-updateDashboard(turnSales);
-
     /** ----------------------------
      * Función para cargar ventas en tabla
      * ---------------------------- */
@@ -380,22 +272,8 @@ updateDashboard(turnSales);
         const result = await res.json();
 
         showToast(result.message || "Operación completada");
-
-        // 🔹 ACTUALIZAR DASHBOARD
-        if (editingSaleId) {
-            // Si es edición, actualizar venta existente
-            updateSaleInTurn(editingSaleId, {
-                amount: data.amount,
-                paid: data.paid
-            });
-        } else {
-            // Si es nueva, agregarla con el ID del servidor
-            addSaleToTurn({
-                id: result.sale_id,
-                amount: data.amount,
-                paid: data.paid
-            });
-        }
+        // Refresca métricas del dashboard index (datos del día)
+        await loadIndexSummary();
 
         resetSaleForm();
         loadSales(editingSaleId || result.sale_id);
@@ -516,6 +394,7 @@ updateDashboard(turnSales);
     const formContainer = document.getElementById("saleFormPanel");
     const headerH2 = formContainer.querySelector("h2");
     if (headerH2) headerH2.textContent = `Editar venta #${id}`;
+
 };  
 
     function resetSaleForm() {
@@ -536,6 +415,7 @@ updateDashboard(turnSales);
         const headerH2 = document.querySelector("#headerForm h2");
         if (headerH2) headerH2.textContent = "Crear venta";
         customerInput.focus();
+        
     }
 
     window.deleteSale = async function(id) {
@@ -544,13 +424,12 @@ updateDashboard(turnSales);
         const result = await res.json();
         showToast(result.message || "Venta eliminada");
         
-        // 🔹 REMOVER DEL DASHBOARD
-        removeSaleFromTurn(id);
-        
         loadSales();
+        await loadIndexSummary();
     }
 
     loadSales();
+    loadIndexSummary();
 
     const btnNewCustomer = document.querySelector("#btnNewCustomer");
     const customerFormDiv = document.querySelector("#customerFormDiv");
@@ -637,7 +516,26 @@ updateDashboard(turnSales);
             window.history.replaceState({}, document.title, window.location.pathname);
         }, 500);
     }
+    async function loadIndexSummary() {
+        try {
+            const res = await fetch("/reports/index-summary");
+            if (!res.ok) throw new Error("No se pudo cargar resumen");
 
+            const data = await res.json();
+
+            document.getElementById("idxTodayTotal").textContent =
+                formatMoney(data.today.total);
+
+            document.getElementById("idxTodayCount").textContent =
+                data.today.count;
+
+            document.getElementById("idxUnpaidAmount").textContent =
+                formatMoney(data.month.unpaid_amount);
+
+        } catch (err) {
+            console.error("❌ Error dashboard index:", err);
+        }
+    }
 
 
 
